@@ -1,5 +1,6 @@
 package com.b2b.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -8,6 +9,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "livraisons")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Livraison {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,9 +25,11 @@ public class Livraison {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"livraisons", "commandes"})
     private User user;
 
     @OneToOne(mappedBy = "livraison")
+    @JsonIgnoreProperties({"livraison", "lignes", "user"})
     private Commande commande;
 
     /**

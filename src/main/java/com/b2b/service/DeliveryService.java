@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -92,6 +93,15 @@ public class DeliveryService {
      * Crée une nouvelle livraison pour une commande
      */
     public DeliveryDTO createDeliveryForOrder(Long orderId, String carrier) {
+        return createDeliveryForOrder(orderId, carrier, null, null);
+    }
+
+    /**
+     * Crée une nouvelle livraison pour une commande avec adresse et frais personnalisés
+     */
+    public DeliveryDTO createDeliveryForOrder(Long orderId, String carrier,
+                                              Map<String, Object> shippingAddress,
+                                              Double shippingCost) {
         Commande commande = commandeRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Commande introuvable avec l'ID: " + orderId));
 
@@ -103,13 +113,26 @@ public class DeliveryService {
 
         // Créer la livraison
         Livraison livraison = new Livraison();
-        livraison.setAdresse(user.getAdresse());
-        livraison.setVille(user.getVille());
-        livraison.setTelephone(user.getTelephone());
+
+        // Utiliser l'adresse personnalisée si fournie, sinon celle de l'utilisateur
+        if (shippingAddress != null && !shippingAddress.isEmpty()) {
+            livraison.setAdresse(shippingAddress.getOrDefault("fullAddress", user.getAdresse()).toString());
+            livraison.setVille(shippingAddress.getOrDefault("city", user.getVille()).toString());
+            livraison.setTelephone(shippingAddress.getOrDefault("phoneNumber", user.getTelephone()).toString());
+        } else {
+            livraison.setAdresse(user.getAdresse());
+            livraison.setVille(user.getVille());
+            livraison.setTelephone(user.getTelephone());
+        }
+
         livraison.setTransporteur(carrier != null ? carrier : "Maroc Poste");
 
-        // Calculer les frais
-        livraison.setFraisLivraison(livraison.calculerFrais(user.getVille()));
+        // Utiliser les frais fournis ou calculer automatiquement
+        if (shippingCost != null && shippingCost > 0) {
+            livraison.setFraisLivraison(shippingCost);
+        } else {
+            livraison.setFraisLivraison(livraison.calculerFrais(livraison.getVille()));
+        }
 
         // Associer l'utilisateur et la commande
         livraison.setUser(user);
@@ -254,4 +277,3 @@ public class DeliveryService {
         return livraison;
     }
 }
-

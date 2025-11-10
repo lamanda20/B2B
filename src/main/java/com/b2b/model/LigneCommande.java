@@ -1,11 +1,13 @@
 package com.b2b.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
 @Table(name = "lignes_commande")
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class LigneCommande {
 
     @Id
@@ -14,10 +16,12 @@ public class LigneCommande {
 
     @ManyToOne
     @JoinColumn(name = "commande_id")
+    @JsonIgnoreProperties({"lignes", "livraison", "user"})
     private Commande commande;
 
     @ManyToOne
     @JoinColumn(name = "produit_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Produit produit;
 
     private int quantite;
