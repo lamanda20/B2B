@@ -3,6 +3,8 @@ package com.b2b.controller;
 import com.b2b.dto.DeliveryDTO;
 import com.b2b.model.StatutCommande;
 import com.b2b.service.DeliveryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ import java.util.Map;
 @CrossOrigin(originPatterns = "*", allowCredentials = "true") // CORRIGÉ : originPatterns au lieu de origins
 public class DeliveryController {
 
+    private static final Logger logger = LoggerFactory.getLogger(DeliveryController.class);
     private final DeliveryService deliveryService;
 
     @Autowired
@@ -33,7 +36,21 @@ public class DeliveryController {
      */
     @GetMapping
     public ResponseEntity<List<DeliveryDTO>> getAllDeliveries() {
+        logger.info("📦 GET /api/deliveries - Récupération de toutes les livraisons");
         List<DeliveryDTO> deliveries = deliveryService.getAllDeliveries();
+        logger.info("✅ {} livraisons trouvées", deliveries.size());
+
+        // Log détaillé de chaque livraison pour diagnostiquer
+        deliveries.forEach(delivery -> {
+            logger.debug("Livraison ID={}, trackingNumber={}, refCommande={}, transporteur={}, statut={}, frais={}",
+                delivery.getId(),
+                delivery.getTrackingNumber(),
+                delivery.getRefCommande(),
+                delivery.getTransporteur(),
+                delivery.getStatut(),
+                delivery.getFraisLivraison());
+        });
+
         return ResponseEntity.ok(deliveries);
     }
 
@@ -75,17 +92,52 @@ public class DeliveryController {
      * POST /api/deliveries - Créer une livraison
      */
     @PostMapping
-    public ResponseEntity<DeliveryDTO> createDelivery(@RequestBody Map<String, Object> deliveryData) {
+    public ResponseEntity<?> createDelivery(@RequestBody Map<String, Object> deliveryData) {
         try {
-            Long commandeId = Long.valueOf(deliveryData.get("commandeId").toString());
-            String carrier = deliveryData.containsKey("transporteur")
-                ? deliveryData.get("transporteur").toString()
-                : "Maroc Poste";
+            // Accepter orderId ou commandeId
+            Long commandeId;
+            if (deliveryData.containsKey("orderId")) {
+                commandeId = Long.valueOf(deliveryData.get("orderId").toString());
+            } else if (deliveryData.containsKey("commandeId")) {
+                commandeId = Long.valueOf(deliveryData.get("commandeId").toString());
+            } else {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "orderId ou commandeId requis");
+                return ResponseEntity.badRequest().body(error);
+            }
 
-            DeliveryDTO delivery = deliveryService.createDeliveryForOrder(commandeId, carrier);
+            // Récupérer le transporteur (carrier ou transporteur)
+            String carrier = null;
+            if (deliveryData.containsKey("carrier")) {
+                carrier = deliveryData.get("carrier").toString();
+            } else if (deliveryData.containsKey("transporteur")) {
+                carrier = deliveryData.get("transporteur").toString();
+            }
+
+            // Récupérer les données d'adresse si présentes
+            Map<String, Object> shippingAddress = null;
+            if (deliveryData.containsKey("shippingAddress")) {
+                shippingAddress = (Map<String, Object>) deliveryData.get("shippingAddress");
+            }
+
+            // Récupérer shippingCost si présent
+            Double shippingCost = null;
+            if (deliveryData.containsKey("shippingCost")) {
+                shippingCost = Double.valueOf(deliveryData.get("shippingCost").toString());
+            }
+
+            DeliveryDTO delivery = deliveryService.createDeliveryForOrder(
+                commandeId, carrier, shippingAddress, shippingCost);
             return ResponseEntity.status(HttpStatus.CREATED).body(delivery);
+        } catch (IllegalArgumentException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Erreur lors de la création de la livraison: " + e.getMessage());
+            e.printStackTrace(); // Pour debug
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 

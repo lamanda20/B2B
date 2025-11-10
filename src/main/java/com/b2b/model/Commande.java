@@ -1,7 +1,7 @@
 package com.b2b.model;
 
-
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,45 +10,76 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Commande {
-    private int id ;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
     private String refCommande;
-    private Client client ;
-    private List<LigneCommande> lignes = new ArrayList<>();
-    private LocalDate dateCommande ;
+
+    private LocalDate dateCommande;
+
+    @Enumerated(EnumType.STRING)
     private StatutCommande statut = StatutCommande.EN_COURS;
 
+    // ============================
+    // RELATION AVEC L'UTILISATEUR
+    // ============================
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"livraisons", "commandes"})
+    private User user;
 
-    public void ajouterligne(LigneCommande lignecmd){
-        lignecmd.setCommande(this);
-        lignes.add(lignecmd);
-    }
-    public double calculerTotal(){
-        double total= 0.0;
-        for ( LigneCommande lcm : lignes){
-            total += lcm.getSousTotal();
-        }
-        return total;
+    // ============================
+    // RELATION AVEC LIGNECOMMANDE
+    // ============================
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"commande"})
+    private List<LigneCommande> lignes = new ArrayList<>();
+
+    // ============================
+    // RELATION AVEC LIVRAISON
+    // ============================
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "livraison_id", referencedColumnName = "idLivraison")
+    @JsonIgnoreProperties({"commande", "user"})
+    private Livraison livraison;
+
+    // ============================
+    // MÉTHODES MÉTIER
+    // ============================
+
+    public void ajouterLigne(LigneCommande ligneCmd) {
+        ligneCmd.setCommande(this);     // association bidirectionnelle
+        lignes.add(ligneCmd);
     }
 
-    public StatutCommande suivreCommande(){
+    public double calculerTotal() {
+        return lignes.stream()
+                .mapToDouble(LigneCommande::getSousTotal)
+                .sum();
+    }
+
+    public StatutCommande suivreCommande() {
         return this.getStatut();
     }
-    public void afficherCommande(){
-        System.out.println("Commande numéro :"+id+" effectué le :" + dateCommande);
-        if ( client != null){
-            System.out.println("Client :" +  statut );
-        }
-        System.out.println("Statut :" +  statut );
+
+    public void afficherCommande() {
+        System.out.println("Commande numéro :" + id + " effectuée le :" + dateCommande);
+        System.out.println("Statut : " + statut);
         System.out.println("-----------------------------------------------");
-        for (LigneCommande lc : lignes){
+
+        for (LigneCommande lc : lignes) {
             System.out.println("Produit :" + lc.getProduit().getNom()
-            + "quantité: " +lc.getQuantite()+ " , prix unitaire : " + lc.getPrixUnitaire() + ", sous-total " + lc.getSousTotal());
-
+                    + " | quantité: " + lc.getQuantite()
+                    + " | prix unitaire : " + lc.getPrixUnitaire()
+                    + " | sous-total : " + lc.getSousTotal());
         }
-        System.out.println("total " + calculerTotal() + " DH" );
-    }
 
+        System.out.println("Total : " + calculerTotal() + " DH");
+    }
 }

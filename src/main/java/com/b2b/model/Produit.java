@@ -1,5 +1,6 @@
 package com.b2b.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.List;
 @Entity
 @Table(name = "produits")
 @Data
+@JsonIgnoreProperties({"lignesCommande", "hibernateLazyInitializer", "handler"})
 public class Produit {
 
     @Id
