@@ -1,30 +1,20 @@
 package com.b2b.model;
 
-import jakarta.persistence.*;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
-@Entity
-@Table(name = "lignes_panier")
 @Data
+@AllArgsConstructor
 public class LignePanier {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "panier_id")
-    private Panier panier;
-
-    @ManyToOne
-    @JoinColumn(name = "produit_id")
-    private Produit produit;
-
+    private int idlignePanier;
     private int quantite;
-    private double prixUnitaire;
-
-    // Méthode pour calculer le sous-total
+    private Panier panier;
+    private Produit produit;
     public double getSousTotal() {
-        return quantite * prixUnitaire;
+       if(produit != null){
+           return produit.getPrix() * quantite ;
+       }
+       return 0.0 ;
     }
 }

@@ -1,36 +1,54 @@
 package com.b2b.model;
 
-import jakarta.persistence.*;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "commandes")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Commande {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    private int id ;
     private String refCommande;
-    private LocalDate dateCommande;
+    private Client client ;
+    private List<LigneCommande> lignes = new ArrayList<>();
+    private LocalDate dateCommande ;
+    private StatutCommande statut = StatutCommande.EN_COURS;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
 
-    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
-    private List<LigneCommande> lignes;
+    public void ajouterligne(LigneCommande lignecmd){
+        lignecmd.setCommande(this);
+        lignes.add(lignecmd);
+    }
+    public double calculerTotal(){
+        double total= 0.0;
+        for ( LigneCommande lcm : lignes){
+            total += lcm.getSousTotal();
+        }
+        return total;
+    }
 
-    @Enumerated(EnumType.STRING) // Important pour sauvegarder le nom du statut
-    private StatutCommande statut;
+    public StatutCommande suivreCommande(){
+        return this.getStatut();
+    }
+    public void afficherCommande(){
+        System.out.println("Commande numéro :"+id+" effectué le :" + dateCommande);
+        if ( client != null){
+            System.out.println("Client :" +  statut );
+        }
+        System.out.println("Statut :" +  statut );
+        System.out.println("-----------------------------------------------");
+        for (LigneCommande lc : lignes){
+            System.out.println("Produit :" + lc.getProduit().getNom()
+            + "quantité: " +lc.getQuantite()+ " , prix unitaire : " + lc.getPrixUnitaire() + ", sous-total " + lc.getSousTotal());
 
-    // --- VOTRE AJOUT ICI ---
-    @OneToOne(cascade = CascadeType.ALL) // CascadeType.ALL signifie que si on sauvegarde une Commande, la Livraison associée l'est aussi.
-    @JoinColumn(name = "livraison_id", referencedColumnName = "idLivraison") // Crée la clé étrangère
-    private Livraison livraison;
+        }
+        System.out.println("total " + calculerTotal() + " DH" );
+    }
 
-    // ... autres méthodes et attributs ...
 }
