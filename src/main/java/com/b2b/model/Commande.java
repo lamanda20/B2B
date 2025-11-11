@@ -20,22 +20,48 @@ public class Commande {
     private LocalDate dateCommande;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({"livraisons", "commandes"})
-    private User user;
+    @JoinColumn(name = "client_id")
+    @JsonIgnoreProperties({"commandes", "panier", "payments", "company"})
+    private AppUser client;
 
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
     @JsonIgnoreProperties({"commande"})
     private List<LigneCommande> lignes;
 
-    @Enumerated(EnumType.STRING) // Important pour sauvegarder le nom du statut
+    @Enumerated(EnumType.STRING)
     private StatutCommande statut;
 
-    // --- VOTRE AJOUT ICI ---
-    @OneToOne(cascade = CascadeType.ALL) // CascadeType.ALL signifie que si on sauvegarde une Commande, la Livraison associée l'est aussi.
-    @JoinColumn(name = "livraison_id", referencedColumnName = "idLivraison") // Crée la clé étrangère
-    @JsonIgnoreProperties({"commande", "user"})
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "livraison_id", referencedColumnName = "idLivraison")
+    @JsonIgnoreProperties({"commande"})
     private Livraison livraison;
 
-    // ... autres méthodes et attributs ...
+    @OneToMany(mappedBy = "commande")
+    @JsonIgnoreProperties({"commande", "appUser"})
+    private List<Payment> payments;
+
+    // Méthodes métier
+    public void ajouterLigne(LigneCommande ligne) {
+        if (lignes != null) {
+            lignes.add(ligne);
+            ligne.setCommande(this);
+        }
+    }
+
+    public void validerCmd() {
+        this.statut = StatutCommande.VALIDEE;
+    }
+
+    public StatutCommande suiviCommande() {
+        return this.statut;
+    }
+
+    public void setAfficherCommande() {
+        System.out.println("Commande #" + refCommande);
+        System.out.println("Date: " + dateCommande);
+        System.out.println("Statut: " + statut);
+        if (lignes != null) {
+            lignes.forEach(LigneCommande::afficherLigne);
+        }
+    }
 }

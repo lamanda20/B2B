@@ -12,20 +12,25 @@ public class LigneCommande {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id_ligne_commande")
+    private Long idLigneCommande;
 
     @ManyToOne
     @JoinColumn(name = "commande_id")
-    @JsonIgnoreProperties({"lignes", "livraison", "user"})
+    @JsonIgnoreProperties({"lignes", "livraison", "client"})
     private Commande commande;
 
     @ManyToOne
     @JoinColumn(name = "produit_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "lignesCommande", "lignesPanier"})
     private Produit produit;
 
     private int quantite;
     private double prixUnitaire;
+
+    // Attribut supplémentaire (probablement pour le vendeur)
+    @Column(name = "seller_line_prix")
+    private Double sellerLinePrix;
 
     // Méthode pour calculer le sous-total
     public double getSousTotal() {
@@ -35,7 +40,7 @@ public class LigneCommande {
     // Méthode pour afficher la ligne
     public void afficherLigne() {
         System.out.println("Ligne de commande: " +
-            (produit != null ? produit.getNom() : "N/A") +
+            (produit != null ? produit.getName() : "N/A") +
             " - Quantité: " + quantite +
             " - Prix unitaire: " + prixUnitaire +
             " - Sous-total: " + getSousTotal());

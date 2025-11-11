@@ -42,8 +42,8 @@ public class LivraisonSuiviController {
                 commande.getRefCommande(),
                 commande.getStatut(),
                 livraison.getTransporteur(),
-                livraison.getDateEnvoi(),
-                livraison.getDateEstimee()
+                livraison.getDateLivraisonEstimee(),
+                livraison.getDateLivraisonEstimee()
         );
 
         // 4. Renvoyer le DTO avec un statut 200 OK

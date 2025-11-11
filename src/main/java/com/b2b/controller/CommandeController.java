@@ -40,8 +40,8 @@ public class CommandeController {
             if (commande.getLignes() != null) {
                 commande.getLignes().size(); // Force lazy loading
             }
-            if (commande.getUser() != null) {
-                commande.getUser().getNom(); // Force lazy loading
+            if (commande.getClient() != null) {
+                commande.getClient().getFullName(); // Force lazy loading
             }
         });
         return ResponseEntity.ok(commandes);

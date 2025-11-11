@@ -1,6 +1,6 @@
 package com.b2b.service.impl;
 
-import com.b2b.model.User;
+import com.b2b.model.AppUser;
 import com.b2b.model.Commande;
 import com.b2b.model.Livraison;
 import com.b2b.model.StatutCommande;
@@ -37,39 +37,35 @@ public class LivraisonServiceImpl implements LivraisonService {
 
     @Override
     public Livraison creerLivraisonPourCommande(Commande commande) {
-        if (commande.getUser() == null) {
-            throw new IllegalArgumentException("La commande doit être associée à un user.");
+        if (commande.getClient() == null) {
+            throw new IllegalArgumentException("La commande doit être associée à un client.");
         }
 
-        // Récupérer les infos du user pour créer la livraison
-        var user = commande.getUser();
+        // Récupérer les infos du client pour créer la livraison
+        var client = commande.getClient();
 
         Livraison livraison = new Livraison();
-        // Adapter aux noms de champs dans User
-        livraison.setAdresse(user.getAdresse());
-        livraison.setVille(user.getVille());
-        livraison.setTelephone(user.getTelephone());
+        // Note: AppUser n'a pas d'adresse directement, il faudra l'obtenir autrement
+        // Pour l'instant, on utilise des valeurs par défaut
+        livraison.setAdresse("Adresse à définir");
+        livraison.setVille("Ville à définir");
+        livraison.setCodePostal("00000");
 
-        // Utiliser la nouvelle méthode calculerFrais de l'entité Livraison
-        livraison.setFraisLivraison(livraison.calculerFrais(user.getVille()));
-
-        // Associer l'utilisateur à la livraison
-        livraison.setUser(user);
+        // Utiliser la méthode setInfoLivraison de l'entité Livraison
+        livraison.setInfoLivraison("Casablanca");
 
         // Transporteur par défaut
         livraison.setTransporteur("Maroc Poste");
+        livraison.setDateLivraisonEstimee(LocalDate.now().plusDays(3));
 
         // Sauvegarder la livraison
         Livraison saved = livraisonRepository.save(livraison);
 
-        // Optionnel: associer la livraison à la commande et sauvegarder la commande
+        // Associer la livraison à la commande et sauvegarder la commande
         commande.setLivraison(saved);
         commandeRepository.save(commande);
 
         return saved;
-
-        // Note : L'association (commande.setLivraison(livraison))
-        // devrait être faite par le service qui gère la validation de la commande (Personne 4).
     }
 
     @Override
@@ -85,14 +81,11 @@ public class LivraisonServiceImpl implements LivraisonService {
             switch (nouveauStatut) {
                 case EXPEDIEE:
                 case EN_COURS:
-                    livraison.setDateEnvoi(LocalDate.now());
-                    livraison.setDateEstimee(LocalDate.now().plusDays(3)); // Estimation de 3 jours
+                    livraison.setDateLivraisonEstimee(LocalDate.now().plusDays(3)); // Estimation de 3 jours
                     break;
                 case LIVREE:
                     // La livraison est terminée
-                    if (livraison.getDateEnvoi() == null) {
-                        livraison.setDateEnvoi(LocalDate.now());
-                    }
+                    livraison.setDateLivraisonEstimee(LocalDate.now());
                     break;
                 case RETOURNEE:
                     // La commande a été retournée
@@ -108,7 +101,7 @@ public class LivraisonServiceImpl implements LivraisonService {
 
         // Appeler le service de notification (Personne 7)
         // String message = "Votre commande #" + commande.getRefCommande() + " est maintenant : " + nouveauStatut;
-        // notificationService.envoyerEmail(commande.getUser(), "Suivi de commande", message);
+        // notificationService.envoyerEmail(commande.getClient(), "Suivi de commande", message);
 
         return commandeSauvegardee;
     }

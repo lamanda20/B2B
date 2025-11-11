@@ -15,16 +15,19 @@ public class Panier {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "client_id")
-    private Client client;
+    @JoinColumn(name = "app_user_id")
+    private AppUser appUser;
 
     @OneToMany(mappedBy = "panier", cascade = CascadeType.ALL)
     private List<LignePanier> lignePaniers;
 
     private LocalDate dateCreation;
 
-    //-total : double
+    // Méthode pour calculer le total
     public double getTotal() {
+        if (lignePaniers == null || lignePaniers.isEmpty()) {
+            return 0.0;
+        }
         return lignePaniers.stream()
                 .mapToDouble(LignePanier::getSousTotal)
                 .sum();
