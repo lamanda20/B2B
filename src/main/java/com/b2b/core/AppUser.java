@@ -1,4 +1,4 @@
-package com.b2b.model;
+package com.b2b.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
