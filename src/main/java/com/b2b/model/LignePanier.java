@@ -1,35 +1,41 @@
 package com.b2b.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
 @Entity
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Table(name = "lignes_panier")
+@Data
 public class LignePanier {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private int quantite;
+    @Column(name = "id_ligne_panier")
+    private Long idLignePanier;
 
     @ManyToOne
     @JoinColumn(name = "panier_id")
-    @JsonIgnoreProperties({"lignes"})
     private Panier panier;
 
     @ManyToOne
     @JoinColumn(name = "produit_id")
     private Produit produit;
 
+    private int quantite;
+
+    // Méthode pour calculer le sous-total
     public double getSousTotal() {
-        if (produit != null) {
-            return produit.getPrix() * quantite;
+        if (produit != null && produit.getPrice() != null) {
+            return quantite * produit.getPrice().doubleValue();
         }
         return 0.0;
+    }
+
+    // Méthode pour afficher la ligne
+    public void afficherLigne() {
+        System.out.println("Ligne de panier: " +
+            (produit != null ? produit.getName() : "N/A") +
+            " - Quantité: " + quantite +
+            " - Sous-total: " + getSousTotal());
     }
 }
