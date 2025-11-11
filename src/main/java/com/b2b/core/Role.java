@@ -1,4 +1,4 @@
-package com.b2b.model;
+package com.b2b.core;
 
 public enum Role {
     SUPER_ADMIN,
