@@ -1,4 +1,4 @@
-package com.b2b.core;
+package com.b2b.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
