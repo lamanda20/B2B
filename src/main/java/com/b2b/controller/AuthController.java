@@ -3,107 +3,99 @@ package com.b2b.controller;
 import com.b2b.auth.LoginResponse;
 import com.b2b.auth.UserPayload;
 import com.b2b.security.JwtUtil;
-import com.b2b.model.AppUser;
-import com.b2b.repository.AppUserRepository;
+import com.b2b.model.AdminUser;
+import com.b2b.model.Company;
+import com.b2b.repository.AdminUserRepository;
+import com.b2b.repository.CompanyRepository;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.*;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final AppUserRepository userRepo;
+    private final AdminUserRepository admins;
+    private final CompanyRepository companies;
+    private final PasswordEncoder encoder;
     private final JwtUtil jwt;
 
-    public AuthController(AuthenticationManager authenticationManager, AppUserRepository userRepo, JwtUtil jwt) {
-        this.authenticationManager = authenticationManager;
-        this.userRepo = userRepo;
+    public AuthController(AdminUserRepository admins,
+                          CompanyRepository companies,
+                          PasswordEncoder encoder,
+                          JwtUtil jwt) {
+        this.admins = admins;
+        this.companies = companies;
+        this.encoder = encoder;
         this.jwt = jwt;
     }
 
-    // ↓↓↓ à mettre tout à la fin du fichier ↓↓↓
-    static class AuthRequest {
+    // DTO d'entrée (équivalent à ton AuthRequest interne)
+    public static class LoginRequest {
         private String email;
         private String password;
 
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
     }
 
-
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
-        System.out.println(">>> /api/auth/login email=" + request.getEmail());
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        String email = (request.getEmail() == null) ? "" : request.getEmail().toLowerCase();
+        String raw = (request.getPassword() == null) ? "" : request.getPassword();
 
         try {
-            // 1) Auth Spring (vérifie email+mdp via UserDetailsService)
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
+            // 1) Tentative ADMIN
+            var adminOpt = admins.findByEmail(email);
+            if (adminOpt.isPresent()) {
+                AdminUser a = adminOpt.get();
+                if (!a.isEnabled())
+                    return ResponseEntity.status(401).body(Map.of("error","USER_DISABLED"));
 
-            // 2) Charger l'utilisateur depuis la base
-            AppUser u = userRepo.findByEmailIgnoreCase(request.getEmail())
-                    .orElseThrow(() -> new IllegalStateException("User not found after auth"));
+                if (!encoder.matches(raw, a.getPassword()))
+                    return ResponseEntity.status(401).body(Map.of("error","BAD_CREDENTIALS"));
 
-// ---- LOGS DIAG ----
-            System.out.println("[LOGIN] u.id=" + u.getId());
-            System.out.println("[LOGIN] u.email=" + u.getEmail());
-            System.out.println("[LOGIN] u.role=" + (u.getRole() == null ? "null" : u.getRole().name()));
-            System.out.println("[LOGIN] u.companyId=" + (u.getCompany() == null ? "null" : u.getCompany().getId()));
-            System.out.println("[LOGIN] jwt bean is null? " + (jwt == null));
-
-// 3) Construire le JWT (100% null-safe)
-            Long userId   = (u.getId() != null) ? u.getId() : -1L;
-            String email  = (u.getEmail() != null) ? u.getEmail() : "";
-            String role   = (u.getRole() != null) ? u.getRole().name() : "SUPER_ADMIN"; // ou "UNKNOWN"
-            Long companyId = (u.getCompany() != null && u.getCompany().getId() != null) ? u.getCompany().getId() : null;
-
-            String token = jwt.generateToken(userId, email, role, companyId);
-
-// 4) mustChangePassword peut être null → false par défaut
-// adapte le getter selon ton entity (getMustChangePassword() ou isMustChangePassword())
-            boolean mustChange = false;
-            try {
-                mustChange = Boolean.TRUE.equals(u.isMustChangePassword());
-            } catch (Exception ignore) {
-                // si ton getter est "isMustChangePassword()" (primitive)
-                // enlève ce try/catch et fais : mustChange = u.isMustChangePassword();
+                // Générer JWT avec rôle ADMIN (companyId = null)
+                String token = jwt.generateToken(null, email, "ADMIN", null);
+                var payload = new UserPayload(null, email, "ADMIN", null);
+                // mustChangePassword: si tu ne gères plus ce champ, renvoie false
+                return ResponseEntity.ok(new LoginResponse(token, payload, false));
             }
 
-// Réponse OK
-            var payload = new UserPayload(userId, email, role, companyId);
-            return ResponseEntity.ok(new LoginResponse(token, payload, mustChange));
+            // 2) Tentative COMPANY
+            Company c = companies.findByEmail(email)
+                    .orElse(null);
+            if (c == null)
+                return ResponseEntity.status(401).body(Map.of("error","BAD_CREDENTIALS"));
 
+            if (!c.isEnabled())
+                return ResponseEntity.status(401).body(Map.of("error","USER_DISABLED"));
 
+            if (!encoder.matches(raw, c.getPassword()))
+                return ResponseEntity.status(401).body(Map.of("error","BAD_CREDENTIALS"));
 
+            // Générer JWT avec rôle COMPANY (companyId = c.getId())
+            String token = jwt.generateToken(
+                    c.getId(),                 // userId (tu peux mettre null si tu ne l’utilises pas)
+                    email,
+                    "COMPANY",
+                    c.getId()                  // companyId dans tes claims
+            );
+            var payload = new UserPayload(
+                    c.getId(),                 // userId dans ton payload (ou null)
+                    email,
+                    "COMPANY",
+                    c.getId()
+            );
+            return ResponseEntity.ok(new LoginResponse(token, payload, false)); // pas de mustChangePassword côté Company pour l’instant
 
-        } catch (org.springframework.security.authentication.BadCredentialsException e) {
-            System.out.println(">>> BAD_CREDENTIALS");
-            return ResponseEntity.status(401).body(Map.of("error", "BAD_CREDENTIALS"));
-        } catch (org.springframework.security.authentication.DisabledException e) {
-            System.out.println(">>> USER_DISABLED");
-            return ResponseEntity.status(401).body(Map.of("error", "USER_DISABLED"));
         } catch (Exception e) {
-            e.printStackTrace(); // <— important pour voir la vraie cause dans la console
-            return ResponseEntity.status(500).body(Map.of("error", "SERVER_ERROR", "detail", e.getClass().getSimpleName()));
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error","SERVER_ERROR","detail",e.getClass().getSimpleName()));
         }
-
     }
 }

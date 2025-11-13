@@ -40,8 +40,8 @@ public class SecurityConfig {
                         .requestMatchers("/", "/dashboard", "/health",
                                 "/css/**", "/js/**", "/images/**",
                                 "/api/public/**", "/public/**", "/h2-console/**").permitAll()
-                        .requestMatchers("/api/companies/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/api/test/protected").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/companies/**").hasRole("ADMIN")
+                        .requestMatchers("/api/test/protected").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 // ▼▼ force 401 si pas authentifié, 403 si droits insuffisants
