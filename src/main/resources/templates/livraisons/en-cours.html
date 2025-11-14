@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Détails de la Livraison</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .details-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .details-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .detail-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .detail-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .detail-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: bold;
+        }
+        .statut-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .statut-EN_ATTENTE { background-color: #fff3cd; color: #856404; }
+        .statut-EN_COURS { background-color: #cfe2ff; color: #084298; }
+        .statut-LIVREE { background-color: #d1e7dd; color: #0f5132; }
+        .statut-RETOURNEE { background-color: #f8d7da; color: #842029; }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .commentaire-section {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="details-container">
+        <div class="details-card">
+            <div class="details-header">
+                <div>
+                    <h1>Détails de la Livraison #<span th:text="${livraison.idLivraison}">123</span></h1>
+                    <span class="statut-badge"
+                          th:classappend="'statut-' + ${livraison.statut}"
+                          th:text="${livraison.statut}">EN_COURS</span>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Commande</div>
+                    <div class="detail-value" th:text="${livraison.commande?.refCommande ?: 'N/A'}">CMD-12345</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Transporteur</div>
+                    <div class="detail-value" th:text="${livraison.transporteur}">Maroc Poste</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Ville</div>
+                    <div class="detail-value" th:text="${livraison.ville}">Casablanca</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Téléphone</div>
+                    <div class="detail-value" th:text="${livraison.telephone}">+212 6XX XXX XXX</div>
+                </div>
+
+                <div class="detail-item" style="grid-column: span 2;">
+                    <div class="detail-label">Adresse complète</div>
+                    <div class="detail-value" th:text="${livraison.adresse}">123 Rue Example, Quartier</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Date d'envoi</div>
+                    <div class="detail-value" th:text="${livraison.dateEnvoi != null ? #temporals.format(livraison.dateEnvoi, 'dd/MM/yyyy') : 'Non envoyé'}">08/11/2025</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Date estimée de livraison</div>
+                    <div class="detail-value" th:text="${livraison.dateEstimee != null ? #temporals.format(livraison.dateEstimee, 'dd/MM/yyyy') : '-'}">11/11/2025</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Frais de livraison</div>
+                    <div class="detail-value" th:text="${livraison.fraisLivraison + ' MAD'}">25 MAD</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Dernière mise à jour</div>
+                    <div class="detail-value" th:text="${livraison.dateDerniereMaj != null ? #temporals.format(livraison.dateDerniereMaj, 'dd/MM/yyyy HH:mm') : '-'}">08/11/2025 14:30</div>
+                </div>
+            </div>
+
+            <div class="commentaire-section" th:if="${livraison.commentaire != null && !livraison.commentaire.isEmpty()}">
+                <strong>Commentaire:</strong>
+                <p th:text="${livraison.commentaire}" style="margin-top: 10px;">Notes sur la livraison</p>
+            </div>
+
+            <div class="action-buttons">
+                <a th:href="@{/livraisons/{id}/modifier(id=${livraison.idLivraison})}" class="btn btn-warning">Modifier</a>
+                <a th:href="@{/suivi/commande/{id}(id=${livraison.commande?.id})}" class="btn btn-primary" th:if="${livraison.commande != null}">Voir le suivi</a>
+
+                <button onclick="updateStatut('EN_COURS')" class="btn btn-primary"
+                        th:if="${livraison.statut == T(com.b2b.model.StatutLivraison).EN_ATTENTE}">
+                    Marquer En Cours
+                </button>
+
+                <button onclick="updateStatut('LIVREE')" class="btn btn-success"
+                        th:if="${livraison.statut == T(com.b2b.model.StatutLivraison).EN_COURS}">
+                    Marquer Livrée
+                </button>
+
+                <button onclick="marquerRetournee()" class="btn btn-danger"
+                        th:if="${livraison.statut != T(com.b2b.model.StatutLivraison).LIVREE && livraison.statut != T(com.b2b.model.StatutLivraison).RETOURNEE}">
+                    Marquer Retournée
+                </button>
+
+                <a href="/livraisons" class="btn btn-secondary">Retour à la liste</a>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const livraisonId = /*[[${livraison.idLivraison}]]*/ 0;
+
+        function updateStatut(nouveauStatut) {
+            if (!confirm('Êtes-vous sûr de vouloir changer le statut ?')) return;
+
+            fetch(`/api/livraisons/${livraisonId}/statut`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nouveauStatut: nouveauStatut,
+                    commentaire: `Statut changé à ${nouveauStatut}`
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Statut mis à jour avec succès !');
+                    location.reload();
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Une erreur est survenue');
+            });
+        }
+
+        function marquerRetournee() {
+            const raison = prompt('Raison du retour:');
+            if (!raison) return;
+
+            fetch(`/api/livraisons/${livraisonId}/retournee?raison=${encodeURIComponent(raison)}`, {
+                method: 'PATCH'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Livraison marquée comme retournée');
+                    location.reload();
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                alert('Une erreur est survenue');
+            });
+        }
+    </script>
+</body>
+</html>
+

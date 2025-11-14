@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Gestion des commandes</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .admin-header h1 {
+            margin: 0;
+        }
+        .commandes-table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .commandes-table th,
+        .commandes-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .commandes-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+        .commandes-table tr:hover {
+            background: #f8f9fa;
+        }
+        .statut-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .statut-EN_ATTENTE_PAIEMENT { background: #fff3cd; color: #856404; }
+        .statut-EN_PREPARATION { background: #cfe2ff; color: #084298; }
+        .statut-EXPEDIEE { background: #d1ecf1; color: #0c5460; }
+        .statut-LIVREE { background: #d1e7dd; color: #0f5132; }
+        .statut-ANNULEE { background: #f8d7da; color: #842029; }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 13px;
+            margin-right: 5px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .filter-section select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>📋 Gestion des Commandes</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Administration des commandes et livraisons</p>
+        </div>
+
+        <div class="filter-section">
+            <label for="statutFilter">Filtrer par statut:</label>
+            <select id="statutFilter" onchange="filtrerParStatut(this.value)">
+                <option value="">Tous les statuts</option>
+                <option value="EN_ATTENTE_PAIEMENT">En attente paiement</option>
+                <option value="EN_PREPARATION">En préparation</option>
+                <option value="EXPEDIEE">Expédiée</option>
+                <option value="LIVREE">Livrée</option>
+                <option value="ANNULEE">Annulée</option>
+            </select>
+        </div>
+
+        <table class="commandes-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Référence</th>
+                    <th>Client</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                    <th>Transporteur</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="commande : ${commandes}">
+                    <td th:text="${commande.id}">1</td>
+                    <td><strong th:text="${commande.refCommande}">CMD-12345678</strong></td>
+                    <td th:text="${commande.client?.nom ?: 'N/A'}">John Doe</td>
+                    <td th:text="${#temporals.format(commande.dateCommande, 'dd/MM/yyyy')}">08/11/2025</td>
+                    <td>
+                        <span class="statut-badge"
+                              th:classappend="'statut-' + ${commande.statut}"
+                              th:text="${commande.statut}">EN_PREPARATION</span>
+                    </td>
+                    <td th:text="${commande.livraison?.transporteur ?: 'Non assigné'}">Maroc Poste</td>
+                    <td>
+                        <a th:href="@{/livraison/admin/statut/{id}(id=${commande.id})}"
+                           class="btn btn-primary">
+                            ✏️ Modifier statut
+                        </a>
+                        <a th:href="@{/livraison/suivi/{ref}(ref=${commande.refCommande})}"
+                           class="btn btn-success">
+                            👁️ Voir suivi
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function filtrerParStatut(statut) {
+            const rows = document.querySelectorAll('.commandes-table tbody tr');
+            rows.forEach(row => {
+                if (statut === '' || row.querySelector('.statut-badge').textContent.trim() === statut) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Suivre ma commande</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .recherche-container {
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+        .recherche-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+        }
+        .recherche-card h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .recherche-card p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .btn-search {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+            color: #666;
+        }
+        .tracking-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="recherche-container">
+        <div class="recherche-card">
+            <div class="tracking-icon">📦</div>
+            <h1>Suivre ma commande</h1>
+            <p>Entrez votre référence de commande pour suivre votre livraison en temps réel</p>
+
+            <form class="search-form" th:action="@{/livraison/suivi/}" method="get" onsubmit="return handleSubmit(event)">
+                <div class="form-group">
+                    <label for="refCommande">Référence de commande</label>
+                    <input type="text"
+                           id="refCommande"
+                           name="refCommande"
+                           placeholder="Ex: CMD-12345678"
+                           required
+                           pattern="CMD-[A-Z0-9]{8}"
+                           title="Format: CMD-XXXXXXXX">
+                </div>
+
+                <button type="submit" class="btn-search">
+                    🔍 Rechercher ma commande
+                </button>
+            </form>
+
+            <div class="info-box">
+                <h3>💡 Où trouver ma référence ?</h3>
+                <ul>
+                    <li>Dans l'email de confirmation de commande</li>
+                    <li>Dans votre espace client</li>
+                    <li>Format: CMD-XXXXXXXX (8 caractères)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleSubmit(event) {
+            event.preventDefault();
+            const refCommande = document.getElementById('refCommande').value.trim();
+            if (refCommande) {
+                window.location.href = '/livraison/suivi/' + refCommande;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>
+
