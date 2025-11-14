@@ -3,13 +3,18 @@ package com.b2b.controller;
 import com.b2b.auth.LoginResponse;
 import com.b2b.auth.UserPayload;
 import com.b2b.security.JwtUtil;
+import com.b2b.dto.LoginRequest;
+import com.b2b.dto.RegisterRequest;
+import com.b2b.dto.ApiResponse;
 import com.b2b.model.AdminUser;
 import com.b2b.model.Company;
 import com.b2b.repository.AdminUserRepository;
 import com.b2b.repository.CompanyRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import com.b2b.service.PasswordResetService;
 
 import java.util.Map;
 
@@ -22,26 +27,64 @@ public class AuthController {
     private final PasswordEncoder encoder;
     private final JwtUtil jwt;
 
+    private final PasswordResetService passwordResetService;
+
     public AuthController(AdminUserRepository admins,
                           CompanyRepository companies,
                           PasswordEncoder encoder,
-                          JwtUtil jwt) {
+                          JwtUtil jwt,
+                          PasswordResetService passwordResetService) {
         this.admins = admins;
         this.companies = companies;
         this.encoder = encoder;
         this.jwt = jwt;
+        this.passwordResetService = passwordResetService;
     }
 
-    // DTO d'entrée (équivalent à ton AuthRequest interne)
-    public static class LoginRequest {
-        private String email;
-        private String password;
+    // ================== REGISTER COMPANY ==================
 
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-        public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
+        String email = req.getEmail() == null ? "" : req.getEmail().trim().toLowerCase();
+
+        if (email.isBlank() || req.getPassword() == null || req.getPassword().isBlank()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(ApiResponse.error("Email et mot de passe sont obligatoires"));
+        }
+
+        // Email déjà utilisé par un admin ?
+        if (admins.findByEmail(email).isPresent()) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error("Cet email est déjà utilisé"));
+        }
+
+        // Email déjà utilisé par une entreprise ?
+        if (companies.existsByEmail(email)) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error("Cet email est déjà utilisé"));
+        }
+
+        Company c = new Company();
+        c.setName(req.getName());
+        c.setEmail(email);
+        c.setPassword(encoder.encode(req.getPassword())); // hash BCrypt
+        c.setAddress(req.getAddress());
+        c.setCity(req.getCity());
+        c.setPhone(req.getPhone());
+        c.setWebsite(req.getWebsite());
+        c.setEnabled(true); // ou false si tu veux validation par admin
+
+        companies.save(c);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Entreprise créée avec succès", null));
     }
+
+    // ================== LOGIN ADMIN + COMPANY ==================
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
@@ -62,7 +105,6 @@ public class AuthController {
                 // Générer JWT avec rôle ADMIN (companyId = null)
                 String token = jwt.generateToken(null, email, "ADMIN", null);
                 var payload = new UserPayload(null, email, "ADMIN", null);
-                // mustChangePassword: si tu ne gères plus ce champ, renvoie false
                 return ResponseEntity.ok(new LoginResponse(token, payload, false));
             }
 
@@ -80,22 +122,85 @@ public class AuthController {
 
             // Générer JWT avec rôle COMPANY (companyId = c.getId())
             String token = jwt.generateToken(
-                    c.getId(),                 // userId (tu peux mettre null si tu ne l’utilises pas)
+                    c.getId(),   // userId ou null si tu ne l’utilises pas
                     email,
                     "COMPANY",
-                    c.getId()                  // companyId dans tes claims
+                    c.getId()    // companyId dans les claims
             );
             var payload = new UserPayload(
-                    c.getId(),                 // userId dans ton payload (ou null)
+                    c.getId(),
                     email,
                     "COMPANY",
                     c.getId()
             );
-            return ResponseEntity.ok(new LoginResponse(token, payload, false)); // pas de mustChangePassword côté Company pour l’instant
+            return ResponseEntity.ok(new LoginResponse(token, payload, false));
 
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error","SERVER_ERROR","detail",e.getClass().getSimpleName()));
         }
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(ApiResponse.error("Email est obligatoire"));
+        }
+
+        var tokenOpt = passwordResetService.createResetTokenForEmail(email);
+
+        // Si tu avais un service d'email, tu enverrais ici
+        tokenOpt.ifPresent(t -> {
+            String link = "http://localhost:3000/reset-password?token=" + t;
+            System.out.println("=== LIEN DE RÉINITIALISATION À ENVOYER PAR EMAIL ===");
+            System.out.println(link);
+            System.out.println("====================================================");
+        });
+
+        // Toujours 200, même si l'email n'existe pas
+        return ResponseEntity.ok(
+                ApiResponse.success("Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.", null)
+        );
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        String newPassword = body.get("newPassword");
+
+        if (token == null || token.isBlank() || newPassword == null || newPassword.isBlank()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(ApiResponse.error("Token et nouveau mot de passe sont obligatoires"));
+        }
+
+        try {
+            passwordResetService.resetPassword(token, newPassword);
+            return ResponseEntity.ok(
+                    ApiResponse.success("Mot de passe réinitialisé avec succès", null)
+            );
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(ApiResponse.error(ex.getMessage()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity
+                    .status(500)
+                    .body(ApiResponse.error("Erreur serveur lors de la réinitialisation du mot de passe"));
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        return ResponseEntity.ok(
+                Map.of("success", true, "message", "Déconnexion réussie")
+        );
+    }
+
+
+
 }

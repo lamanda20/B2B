@@ -2,13 +2,14 @@ package com.b2b.config;
 
 import com.b2b.security.JwtAuthenticationFilter;
 import com.b2b.security.JwtUtil;
-import jakarta.servlet.http.HttpServletResponse;                 // <-- important
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,13 +19,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import java.util.Arrays;
 
-
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-
 @Configuration
+@EnableMethodSecurity   // tu peux le mettre directement ici, plus simple
 public class SecurityConfig {
 
     @Bean
@@ -36,15 +35,27 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/auth/set-password").permitAll()
+
+                        // Auth public (login/register/forgot/reset)
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password"
+                        ).permitAll()
+
+                        //  Public
                         .requestMatchers("/", "/dashboard", "/health",
                                 "/css/**", "/js/**", "/images/**",
                                 "/api/public/**", "/public/**", "/h2-console/**").permitAll()
+
+                        //  Admin-only (API + dashboard)
                         .requestMatchers("/api/companies/**").hasRole("ADMIN")
-                        .requestMatchers("/api/test/protected").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                        // le reste = authentifié
                         .anyRequest().authenticated()
                 )
-                // ▼▼ force 401 si pas authentifié, 403 si droits insuffisants
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> res.sendError(HttpServletResponse.SC_UNAUTHORIZED))
                         .accessDeniedHandler((req, res, e) -> res.sendError(HttpServletResponse.SC_FORBIDDEN))
@@ -85,11 +96,5 @@ public class SecurityConfig {
             @Value("${security.jwt.expiration-minutes:60}") long expMinutes
     ) {
         return new JwtUtil(secret, issuer, expMinutes);
-    }
-
-    @Configuration
-    @EnableMethodSecurity  // <- indispensable pour @PreAuthorize
-    public class MethodSecurityConfig {
-        // vide : l’annotation suffit
     }
 }

@@ -10,49 +10,68 @@ import org.springframework.stereotype.Service;
 @Service
 public class AccountService {
 
-    private final CompanyRepository companies;
     private final AdminUserRepository admins;
+    private final CompanyRepository companies;
     private final PasswordEncoder encoder;
 
-    public AccountService(CompanyRepository companies,
-                          AdminUserRepository admins,
+    public AccountService(AdminUserRepository admins,
+                          CompanyRepository companies,
                           PasswordEncoder encoder) {
-        this.companies = companies;
         this.admins = admins;
+        this.companies = companies;
         this.encoder = encoder;
     }
 
-    public void changePassword(String email, String currentPassword, String newPassword) {
-        String normalized = email.toLowerCase();
+    public void changePassword(String email, String currentRaw, String newRaw) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Utilisateur non authentifié");
+        }
+        email = email.toLowerCase();
 
-        // 1) Essayer en tant qu'ADMIN
-        var adminOpt = admins.findByEmail(normalized);
-        if (adminOpt.isPresent()) {
-            AdminUser admin = adminOpt.get();
+        boolean found = false;
 
-            if (!admin.isEnabled())
-                throw new IllegalArgumentException("Compte admin désactivé");
-            if (!encoder.matches(currentPassword, admin.getPassword()))
+        // 1) Essayer AdminUser
+        AdminUser admin = admins.findByEmail(email).orElse(null);
+        if (admin != null) {
+            found = true;
+
+            if (!admin.isEnabled()) {
+                throw new IllegalArgumentException("Compte administrateur désactivé");
+            }
+
+            if (!encoder.matches(currentRaw, admin.getPassword())) {
                 throw new IllegalArgumentException("Mot de passe actuel invalide");
-            if (encoder.matches(newPassword, admin.getPassword()))
-                throw new IllegalArgumentException("Le nouveau mot de passe doit être différent");
+            }
 
-            admin.setPassword(encoder.encode(newPassword));
+            if (encoder.matches(newRaw, admin.getPassword())) {
+                throw new IllegalArgumentException("Le nouveau mot de passe doit être différent de l'ancien");
+            }
+
+            admin.setPassword(encoder.encode(newRaw));
             admins.save(admin);
-            return;
         }
 
-        // 2) Sinon, ENTREPRISE (Company)
-        Company company = companies.findByEmail(normalized)
-                .orElseThrow(() -> new IllegalArgumentException("Compte introuvable"));
-        if (!company.isEnabled())
-            throw new IllegalArgumentException("Compte désactivé");
-        if (!encoder.matches(currentPassword, company.getPassword()))
-            throw new IllegalArgumentException("Mot de passe actuel invalide");
-        if (encoder.matches(newPassword, company.getPassword()))
-            throw new IllegalArgumentException("Le nouveau mot de passe doit être différent");
+        // 2) Sinon Company
+        if (!found) {
+            Company company = companies.findByEmail(email).orElse(null);
+            if (company == null) {
+                throw new IllegalArgumentException("Compte introuvable");
+            }
 
-        company.setPassword(encoder.encode(newPassword));
-        companies.save(company);
+            if (!company.isEnabled()) {
+                throw new IllegalArgumentException("Compte entreprise désactivé");
+            }
+
+            if (!encoder.matches(currentRaw, company.getPassword())) {
+                throw new IllegalArgumentException("Mot de passe actuel invalide");
+            }
+
+            if (encoder.matches(newRaw, company.getPassword())) {
+                throw new IllegalArgumentException("Le nouveau mot de passe doit être différent de l'ancien");
+            }
+
+            company.setPassword(encoder.encode(newRaw));
+            companies.save(company);
+        }
     }
 }
