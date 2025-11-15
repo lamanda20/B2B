@@ -31,7 +31,7 @@ public class LigneCommande {
     // Méthode pour afficher la ligne
     public void afficherLigne() {
         System.out.println("Ligne de commande: " +
-            (produit != null ? produit.getNom() : "N/A") +
+            (produit != null ? produit.getName() : "N/A") +
             " - Quantité: " + quantite +
             " - Prix unitaire: " + prixUnitaire +
             " - Sous-total: " + getSousTotal());

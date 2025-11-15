@@ -7,8 +7,7 @@ import com.b2b.model.StatutCommande;
 import com.b2b.repository.CommandeRepository;
 import com.b2b.repository.LivraisonRepository;
 import com.b2b.service.LivraisonService;
-// Importez le service de notification de la Personne 7
-// import com.b2b.service.NotificationService;
+import com.b2b.service.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,17 +21,16 @@ public class LivraisonServiceImpl implements LivraisonService {
 
     private final LivraisonRepository livraisonRepository;
     private final CommandeRepository commandeRepository;
-    // Injectez le service de la Personne 7 quand il sera prêt
-    // private final NotificationService notificationService;
+    private final NotificationService notificationService;
 
     // Injection des dépendances par le constructeur
     @Autowired
     public LivraisonServiceImpl(LivraisonRepository livraisonRepository,
-                                CommandeRepository commandeRepository) {
-        // NotificationService notificationService) {
+                                CommandeRepository commandeRepository,
+                                NotificationService notificationService) {
         this.livraisonRepository = livraisonRepository;
         this.commandeRepository = commandeRepository;
-        // this.notificationService = notificationService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -103,12 +101,14 @@ public class LivraisonServiceImpl implements LivraisonService {
             livraisonRepository.save(livraison);
         }
 
-        // Sauvegarder la commande mise à jour
+        // Alaa Kana Hona
         Commande commandeSauvegardee = commandeRepository.save(commande);
 
-        // Appeler le service de notification (Personne 7)
-        // String message = "Votre commande #" + commande.getRefCommande() + " est maintenant : " + nouveauStatut;
-        // notificationService.envoyerEmail(commande.getUser(), "Suivi de commande", message);
+        String message = "Votre commande #" + commande.getRefCommande() + " est maintenant : " + nouveauStatut;
+        notificationService.notify(
+                commande.getUser().getId(),
+                "Statut commande mis à jour",
+                message);
 
         return commandeSauvegardee;
     }
