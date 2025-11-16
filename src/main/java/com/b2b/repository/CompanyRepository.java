@@ -15,4 +15,5 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     // Méthodes alias attendues par le code existant
     boolean existsByEmail(String email);
     Optional<Company> findByEmail(String email);
+
 }
