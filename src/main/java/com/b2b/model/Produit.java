@@ -3,6 +3,8 @@ package com.b2b.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -15,11 +17,12 @@ public class Produit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String nom;
+    private String name;
     private String description;
-    private double prix;
-    private int stockDisponible;
-    private String categorie;
+    private BigDecimal price;
+    private int stock;
+    private Long sellerId;
+
 
     @OneToMany(mappedBy = "produit")
     private List<LigneCommande> lignesCommande;
