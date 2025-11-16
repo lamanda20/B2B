@@ -1,5 +1,6 @@
 package com.b2b.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -10,7 +11,7 @@ import java.util.List;
 @Entity
 @Table(name = "companies")
 @Data
-@JsonIgnoreProperties({"users", "produits", "hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({"produits", "products", "hibernateLazyInitializer", "handler"})
 public class Company {
 
     @Id
@@ -25,25 +26,22 @@ public class Company {
     private String city;
     private String phone;
     private String website;
-
-    @OneToMany(mappedBy = "company")
-    @JsonIgnoreProperties({"company"})
-    private List<AppUser> users;
+    private String email;
+    private String password;
+    private boolean mustChangePassword;
+    private String fullName;
+    // Setter for role
+    private Role role;
+    private boolean enabled;
 
     @OneToMany(mappedBy = "company")
     @JsonIgnoreProperties({"company"})
     private List<Produit> produits;
 
-    // Méthode pour obtenir les clients (utilisateurs avec rôle BUYER)
-    public List<AppUser> getClients() {
-        return users.stream()
-                .filter(user -> user.getRole() == Role.BUYER)
-                .toList();
-    }
-
     // Méthode pour obtenir les produits
+    @JsonIgnore
     public List<Produit> getProducts() {
         return produits;
     }
-}
 
+}

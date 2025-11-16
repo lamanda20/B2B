@@ -16,15 +16,14 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String mode;
-    private String statut;
+    private String moyen;
+    private String produit;
 
     @ManyToOne
-    @JoinColumn(name = "app_user_id")
-    @JsonIgnoreProperties({"payments", "panier", "company"})
-    private AppUser appUser;
+    @JoinColumn(name = "company_id")
+    @JsonIgnoreProperties({"produits"})
+    private Company company;
 
-    private String product;
     private LocalDate date;
     private Double amount;
 
@@ -33,27 +32,36 @@ public class Payment {
 
     @ManyToOne
     @JoinColumn(name = "commande_id")
-    @JsonIgnoreProperties({"payments", "lignes", "livraison"})
+    @JsonIgnoreProperties({"paiements", "lignes", "livraison", "company"})
     private Commande commande;
 
-    // Méthodes métier
+    @PrePersist
+    protected void onCreate() {
+        if (date == null) {
+            date = LocalDate.now();
+        }
+        if (status == null) {
+            status = StatutPaiement.EN_ATTENTE;
+        }
+    }
+
+    // Méthode effectuerPaiement
     public boolean effectuerPaiement() {
-        // Logique de paiement
         if (this.amount != null && this.amount > 0) {
             this.status = StatutPaiement.PAYE;
-            this.statut = "PAYE";
             return true;
         }
         this.status = StatutPaiement.ECHOUE;
-        this.statut = "ECHOUE";
         return false;
     }
 
+    // Méthode getStatutPaiement
     public String getStatutPaiement() {
-        return this.status != null ? this.status.name() : "INCONNU";
+        return status != null ? status.name() : "INCONNU";
     }
 
+    // Méthode calculerMontant
     public double calculerMontant() {
-        return this.amount != null ? this.amount : 0.0;
+        return amount != null ? amount : 0.0;
     }
 }

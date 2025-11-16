@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,13 +21,13 @@ public class Commande {
     private LocalDate dateCommande;
 
     @ManyToOne
-    @JoinColumn(name = "client_id")
-    @JsonIgnoreProperties({"commandes", "panier", "payments", "company"})
-    private AppUser client;
+    @JoinColumn(name = "company_id")
+    @JsonIgnoreProperties({"produits"})
+    private Company company;
 
-    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"commande"})
-    private List<LigneCommande> lignes;
+    private List<LigneCommande> lignes = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private StatutCommande statut;
@@ -36,32 +37,64 @@ public class Commande {
     @JsonIgnoreProperties({"commande"})
     private Livraison livraison;
 
-    @OneToMany(mappedBy = "commande")
-    @JsonIgnoreProperties({"commande", "appUser"})
-    private List<Payment> payments;
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"commande", "company"})
+    private List<Payment> paiements = new ArrayList<>();
 
-    // Méthodes métier
-    public void ajouterLigne(LigneCommande ligne) {
-        if (lignes != null) {
-            lignes.add(ligne);
-            ligne.setCommande(this);
+    @PrePersist
+    protected void onCreate() {
+        if (dateCommande == null) {
+            dateCommande = LocalDate.now();
+        }
+        if (refCommande == null) {
+            refCommande = "CMD-" + System.currentTimeMillis();
         }
     }
 
-    public void validerCmd() {
-        this.statut = StatutCommande.VALIDEE;
+    // Méthode ajouterLigneCommande
+    public void ajouterLigneCommande(LigneCommande ligne) {
+        if (lignes == null) {
+            lignes = new ArrayList<>();
+        }
+        lignes.add(ligne);
+        ligne.setCommande(this);
     }
 
-    public StatutCommande suiviCommande() {
+    // Alias ajouterLigne
+    public void ajouterLigne(LigneCommande ligne) {
+        ajouterLigneCommande(ligne);
+    }
+
+    // Méthode calculerTotal
+    public double calculerTotal() {
+        double total = 0.0;
+        if (lignes != null && !lignes.isEmpty()) {
+            total = lignes.stream()
+                    .mapToDouble(LigneCommande::getSousTotal)
+                    .sum();
+        }
+        if (livraison != null) {
+            total += livraison.getFraisLivraison();
+        }
+        return total;
+    }
+
+    // Méthode validerCommande
+    public StatutCommande validerCommande() {
+        this.statut = StatutCommande.VALIDEE;
         return this.statut;
     }
 
-    public void setAfficherCommande() {
-        System.out.println("Commande #" + refCommande);
+    // Méthode afficherCommande
+    public void afficherCommande() {
+        System.out.println("=== Commande #" + refCommande + " ===");
         System.out.println("Date: " + dateCommande);
         System.out.println("Statut: " + statut);
-        if (lignes != null) {
+        System.out.println("Company: " + (company != null ? company.getName() : "N/A"));
+        System.out.println("--- Lignes de commande ---");
+        if (lignes != null && !lignes.isEmpty()) {
             lignes.forEach(LigneCommande::afficherLigne);
         }
+        System.out.println("Total: " + calculerTotal() + " DH");
     }
 }

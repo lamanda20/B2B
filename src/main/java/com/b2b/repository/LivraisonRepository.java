@@ -27,8 +27,4 @@ public interface LivraisonRepository extends JpaRepository<Livraison, Long> {
 
     // Recherche par transporteur
     List<Livraison> findByTransporteur(String transporteur);
-
-    // Recherche par user
-    @Query("SELECT l FROM Livraison l WHERE l.user.id = :userId")
-    List<Livraison> findByUserId(@Param("userId") Long userId);
 }

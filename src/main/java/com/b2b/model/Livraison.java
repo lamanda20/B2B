@@ -18,73 +18,74 @@ public class Livraison {
     private String adresse;
     private String ville;
     private String codePostal;
+    private String telephone;
     private String transporteur;
     private double fraisLivraison;
-    private LocalDate dateLivraisonEstimee;
+    private LocalDate dateEnvoi;
+    private LocalDate dateEstimee;
 
     @OneToOne(mappedBy = "livraison")
-    @JsonIgnoreProperties({"livraison", "lignes", "client"})
+    @JsonIgnoreProperties({"livraison", "lignes", "Company", "paiements"})
     private Commande commande;
 
-    /**
-     * Définir les informations de livraison et calculer les frais
-     * @param ville La ville de destination
-     * @return Le montant des frais de livraison en DH
-     */
-    public double setInfoLivraison(String ville) {
-        this.ville = ville;
-        this.fraisLivraison = calculerFrais(ville);
-        return this.fraisLivraison;
+    @PrePersist
+    protected void onCreate() {
+        if (dateEnvoi == null) {
+            dateEnvoi = LocalDate.now();
+        }
     }
 
-    /**
-     * Retourne les informations de livraison
-     * @return Les informations de livraison formatées
-     */
-    public String getInfoLiv() {
-        return getInfosSuivi();
-    }
-
-    /**
-     * Calcule les frais de livraison selon la ville
-     * @param ville La ville de destination
-     * @return Le montant des frais de livraison en DH
-     */
-    private double calculerFrais(String ville) {
+    // Méthode calculerFrais - Retourne String selon le diagramme
+    public String calculerFrais(String ville) {
         if (ville == null || ville.trim().isEmpty()) {
-            return 50.0; // Frais par défaut
+            this.fraisLivraison = 50.0;
+            return "Frais de livraison: 50.0 DH (ville non spécifiée)";
         }
 
         String villeLower = ville.toLowerCase();
-
         switch (villeLower) {
-            case "casablanca":
-                return 20.0;
-            case "rabat":
-            case "marrakech":
-            case "tanger":
-                return 35.0;
+            case "casablanca", "rabat":
+                this.fraisLivraison = 20.0;
+                break;
+            case "marrakech", "fès", "tanger", "agadir":
+                this.fraisLivraison = 35.0;
+                break;
+            case "oujda", "tétouan", "meknès":
+                this.fraisLivraison = 45.0;
+                break;
             default:
-                return 50.0; // Reste du Maroc
+                this.fraisLivraison = 50.0;
         }
+
+        return "Frais de livraison pour " + ville + ": " + this.fraisLivraison + " DH";
     }
 
-    /**
-     * Retourne les informations de suivi sous forme de chaîne
-     * @return Les informations de suivi formatées
-     */
-    private String getInfosSuivi() {
+    // Méthode getInfosSuivi
+    public String getInfosSuivi() {
         StringBuilder info = new StringBuilder();
-        info.append("Livraison #").append(idLivraison).append("\n");
-        info.append("Adresse: ").append(adresse).append(", ").append(ville).append("\n");
+        info.append("=== Informations de Livraison ===\n");
+        info.append("ID: ").append(idLivraison).append("\n");
+        info.append("Adresse: ").append(adresse != null ? adresse : "Non définie").append("\n");
+        info.append("Ville: ").append(ville != null ? ville : "Non définie").append("\n");
         if (codePostal != null) {
             info.append("Code Postal: ").append(codePostal).append("\n");
         }
-        info.append("Transporteur: ").append(transporteur).append("\n");
-        info.append("Frais de livraison: ").append(fraisLivraison).append(" DH\n");
+        if (telephone != null) {
+            info.append("Téléphone: ").append(telephone).append("\n");
+        }
+        info.append("Transporteur: ").append(transporteur != null ? transporteur : "Non assigné").append("\n");
+        info.append("Frais: ").append(fraisLivraison).append(" DH\n");
 
-        if (dateLivraisonEstimee != null) {
-            info.append("Date estimée: ").append(dateLivraisonEstimee).append("\n");
+        if (dateEnvoi != null) {
+            info.append("Date d'envoi: ").append(dateEnvoi).append("\n");
+        }
+        if (dateEstimee != null) {
+            info.append("Date estimée: ").append(dateEstimee).append("\n");
+        }
+
+        if (commande != null) {
+            info.append("Commande: ").append(commande.getRefCommande()).append("\n");
+            info.append("Statut: ").append(commande.getStatut()).append("\n");
         }
 
         return info.toString();

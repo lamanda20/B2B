@@ -112,7 +112,7 @@
             <div class="info-box">
                 <p><strong>Référence:</strong> <span th:text="${commande.refCommande}">CMD-12345678</span></p>
                 <p><strong>Date:</strong> <span th:text="${#temporals.format(commande.dateCommande, 'dd/MM/yyyy')}">08/11/2025</span></p>
-                <p><strong>Client:</strong> <span th:text="${commande.client?.nom ?: 'N/A'}">John Doe</span></p>
+                <p><strong>Company:</strong> <span th:text="${commande.Company?.nom ?: 'N/A'}">John Doe</span></p>
                 <p>
                     <strong>Statut actuel:</strong>
                     <span class="statut-badge"
@@ -149,7 +149,7 @@
                     <li><strong>EN_ATTENTE_PAIEMENT:</strong> En attente du paiement</li>
                     <li><strong>EN_PREPARATION:</strong> Commande en cours de préparation</li>
                     <li><strong>EXPEDIEE:</strong> Colis expédié (déclenche la livraison)</li>
-                    <li><strong>LIVREE:</strong> Commande livrée au client</li>
+                    <li><strong>LIVREE:</strong> Commande livrée au Company</li>
                     <li><strong>ANNULEE:</strong> Commande annulée</li>
                 </ul>
             </div>
