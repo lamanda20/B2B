@@ -34,7 +34,7 @@ public class Delivery {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    private AdminUser user;
 
     @OneToOne
     @JoinColumn(name = "order_id")
