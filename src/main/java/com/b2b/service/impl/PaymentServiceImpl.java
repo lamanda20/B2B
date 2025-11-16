@@ -1,82 +1,64 @@
 package com.b2b.service.impl;
 
+import com.b2b.dto.PaymentDTO;
 import com.b2b.model.Payment;
 import com.b2b.model.StatutPaiement;
 import com.b2b.repository.PaymentRepository;
 import com.b2b.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class PaymentServiceImpl implements PaymentService {
 
-    private final PaymentRepository paymentRepository;
-
     @Autowired
-    public PaymentServiceImpl(PaymentRepository paymentRepository) {
-        this.paymentRepository = paymentRepository;
+    private PaymentRepository paymentRepository;
+
+    public List<PaymentDTO> getAllPayments() {
+        return paymentRepository.findAll().stream()
+                .map(PaymentDTO::new)
+                .collect(Collectors.toList());
     }
 
-    @Override
-    public List<Payment> findAll() {
-        return paymentRepository.findAll();
+    public PaymentDTO createPayment(Payment payment) {
+        payment.setStatus(StatutPaiement.EN_ATTENTE);
+        payment.setDate(LocalDateTime.now());
+        Payment saved = paymentRepository.save(payment);
+        return new PaymentDTO(saved);
     }
 
-    @Override
-    public Optional<Payment> findById(Long id) {
-        return paymentRepository.findById(id);
-    }
-
-    @Override
-    public List<Payment> findByCompany(Long companyId) {
-        return paymentRepository.findByCompanyId(companyId);
-    }
-
-    @Override
-    public List<Payment> findByCommande(Long commandeId) {
-        return paymentRepository.findByCommandeId(commandeId);
-    }
-
-    @Override
-    public List<Payment> findByStatus(StatutPaiement status) {
-        return paymentRepository.findByStatus(status);
-    }
-
-    @Override
-    public Payment create(Payment payment) {
-        return paymentRepository.save(payment);
-    }
-
-    @Override
-    public boolean effectuerPaiement(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
+    public PaymentDTO validatePayment(Long id) {
+        Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Paiement non trouvé"));
-        boolean success = payment.effectuerPaiement();
-        paymentRepository.save(payment);
-        return success;
+        if (payment.getStatus() != StatutPaiement.EN_ATTENTE) {
+            throw new RuntimeException("Paiement ne peut pas être validé (statut actuel : " + payment.getStatus().getLabel() + ")");
+        }
+        payment.setStatus(StatutPaiement.VALIDE);
+        payment.setValidationDate(LocalDateTime.now());
+        payment.setHistory((payment.getHistory() != null ? payment.getHistory() + "\n" : "") + "Validé le " + LocalDateTime.now());
+        Payment saved = paymentRepository.save(payment);
+        return new PaymentDTO(saved);
     }
 
-    @Override
-    public String getStatutPaiement(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
+    public PaymentDTO cancelPayment(Long id) {
+        Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Paiement non trouvé"));
-        return payment.getStatutPaiement();
+        if (payment.getStatus() != StatutPaiement.EN_ATTENTE) {
+            throw new RuntimeException("Paiement ne peut pas être annulé (statut actuel : " + payment.getStatus().getLabel() + ")");
+        }
+        payment.setStatus(StatutPaiement.REFUSE);
+        payment.setHistory((payment.getHistory() != null ? payment.getHistory() + "\n" : "") + "Annulé le " + LocalDateTime.now());
+        Payment saved = paymentRepository.save(payment);
+        return new PaymentDTO(saved);
     }
 
-    @Override
-    public double calculerMontant(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new RuntimeException("Paiement non trouvé"));
-        return payment.calculerMontant();
-    }
-
-    @Override
-    public void delete(Long id) {
-        paymentRepository.deleteById(id);
+    public Optional<PaymentDTO> findByTransactionId(String transactionId) {
+        return paymentRepository.findByTransactionId(transactionId)
+                .map(PaymentDTO::new);
     }
 }

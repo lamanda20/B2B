@@ -1,142 +1,64 @@
 package com.b2b.controller;
 
+import com.b2b.dto.PaymentDTO;
 import com.b2b.model.Payment;
-import com.b2b.model.StatutPaiement;
 import com.b2b.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
-/**
- * Contrôleur REST pour gérer les paiements
- * Endpoints accessibles via /api/payments/**
- */
 @RestController
-@RequestMapping("/api/payments")
-@CrossOrigin(originPatterns = "*", allowCredentials = "true")
+@RequestMapping("/payments")
+@CrossOrigin(originPatterns = "*", allowCredentials = "true")  // CORRIGÉ: originPatterns au lieu de origins
 public class PaymentController {
 
-    private final PaymentService paymentService;
-
     @Autowired
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
+    private PaymentService paymentService;
 
-    /**
-     * GET /api/payments - Liste tous les paiements
-     */
     @GetMapping
-    public ResponseEntity<List<Payment>> findAll() {
-        return ResponseEntity.ok(paymentService.findAll());
+    public ResponseEntity<List<PaymentDTO>> getAllPayments() {
+        List<PaymentDTO> payments = paymentService.getAllPayments();
+        return ResponseEntity.ok(payments);
     }
 
-    /**
-     * GET /api/payments/{id} - Détails d'un paiement
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<Payment> findById(@PathVariable Long id) {
-        return paymentService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * GET /api/payments/Company/{CompanyId} - Paiements d'un Company
-     */
-    @GetMapping("/Company/{CompanyId}")
-    public ResponseEntity<List<Payment>> findByCompany(@PathVariable Long CompanyId) {
-        return ResponseEntity.ok(paymentService.findByCompany(CompanyId));
-    }
-
-    /**
-     * GET /api/payments/commande/{commandeId} - Paiements d'une commande
-     */
-    @GetMapping("/commande/{commandeId}")
-    public ResponseEntity<List<Payment>> findByCommande(@PathVariable Long commandeId) {
-        return ResponseEntity.ok(paymentService.findByCommande(commandeId));
-    }
-
-    /**
-     * GET /api/payments/status/{status} - Paiements par statut
-     */
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<Payment>> findByStatus(@PathVariable String status) {
+    @PostMapping
+    public ResponseEntity<PaymentDTO> createPayment(@RequestBody Payment payment) {
         try {
-            StatutPaiement statutEnum = StatutPaiement.valueOf(status.toUpperCase());
-            return ResponseEntity.ok(paymentService.findByStatus(statutEnum));
-        } catch (IllegalArgumentException e) {
+            PaymentDTO created = paymentService.createPayment(payment);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * POST /api/payments - Créer un nouveau paiement
-     */
-    @PostMapping
-    public ResponseEntity<Payment> create(@RequestBody Payment payment) {
-        Payment created = paymentService.create(payment);
-        return ResponseEntity.ok(created);
-    }
-
-    /**
-     * POST /api/payments/{id}/effectuer - Effectuer un paiement
-     */
-    @PostMapping("/{id}/effectuer")
-    public ResponseEntity<Map<String, Object>> effectuerPaiement(@PathVariable Long id) {
+    @PutMapping("/{id}/validate")
+    public ResponseEntity<PaymentDTO> validatePayment(@PathVariable Long id) {
         try {
-            boolean success = paymentService.effectuerPaiement(id);
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", success);
-            response.put("message", success ? "Paiement effectué avec succès" : "Échec du paiement");
-            response.put("statut", paymentService.getStatutPaiement(id));
-            return ResponseEntity.ok(response);
+            PaymentDTO validated = paymentService.validatePayment(id);
+            return ResponseEntity.ok(validated);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * GET /api/payments/{id}/statut - Obtenir le statut d'un paiement
-     */
-    @GetMapping("/{id}/statut")
-    public ResponseEntity<Map<String, String>> getStatutPaiement(@PathVariable Long id) {
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<PaymentDTO> cancelPayment(@PathVariable Long id) {
         try {
-            String statut = paymentService.getStatutPaiement(id);
-            Map<String, String> response = new HashMap<>();
-            response.put("statut", statut);
-            return ResponseEntity.ok(response);
+            PaymentDTO canceled = paymentService.cancelPayment(id);
+            return ResponseEntity.ok(canceled);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().build();
         }
     }
 
-    /**
-     * GET /api/payments/{id}/montant - Calculer le montant d'un paiement
-     */
-    @GetMapping("/{id}/montant")
-    public ResponseEntity<Map<String, Double>> calculerMontant(@PathVariable Long id) {
-        try {
-            double montant = paymentService.calculerMontant(id);
-            Map<String, Double> response = new HashMap<>();
-            response.put("montant", montant);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    /**
-     * DELETE /api/payments/{id} - Supprimer un paiement
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        paymentService.delete(id);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/search")
+    public ResponseEntity<PaymentDTO> searchByTransactionId(@RequestParam String transactionId) {
+        Optional<PaymentDTO> payment = paymentService.findByTransactionId(transactionId);
+        return payment.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }
-

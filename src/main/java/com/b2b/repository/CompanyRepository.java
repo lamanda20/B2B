@@ -11,4 +11,8 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     boolean existsByNameIgnoreCase(String name);
     Optional<Company> findByEmailIgnoreCase(String email);
     long countByRole(Role role); // Use long for count methods
+
+    // Méthodes alias attendues par le code existant
+    boolean existsByEmail(String email);
+    Optional<Company> findByEmail(String email);
 }
