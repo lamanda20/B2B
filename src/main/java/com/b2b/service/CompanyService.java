@@ -10,6 +10,8 @@ public interface CompanyService {
     CompanyDto createCompany(CompanyDto companyDto);
     CompanyDto updateCompany(Long id, CompanyDto companyDto);
     void deleteCompany(Long id);
+    CompanyDto disableCompany(Long id);
+    CompanyDto enableCompany(Long id) ;
 
     // Get a company by the account email (used for authenticated user's company)
     CompanyDto getCompanyByEmail(String email);

@@ -74,6 +74,22 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
+    public CompanyDto enableCompany(Long id){
+        return companyRepository.findById(id).map(existing -> {
+            existing.setEnabled(true);
+            return toDto(companyRepository.save(existing));
+        }).orElse(null);
+    }
+    @Override
+    public CompanyDto disableCompany(Long id){
+        return companyRepository.findById(id).map(existing -> {
+            existing.setEnabled(false);
+            return toDto(companyRepository.save(existing));
+        }).orElse(null);
+    }
+
+
+    @Override
     public void deleteCompany(Long id) {
         companyRepository.deleteById(id);
     }
