@@ -18,34 +18,29 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String orderId;  // Référence à la commande (ex. : ID de Commande)
+    private String orderId;
     private Double amount;
-    private String method;   // Ex. : "CARTE_BANCAIRE", "VIREMENT", etc.
+    private String method;
     private String reference;
     private String notes;
     private String transactionId;
-    private LocalDateTime date;  // Date de création/validation
+    private LocalDateTime date;
     private LocalDateTime validationDate;
-    private String history;  // Historique des actions (ex. : "Validé le 2023-10-01")
+    private String history;
 
     @Enumerated(EnumType.STRING)
-    private PaymentStatus status = PaymentStatus.EN_ATTENTE;  // Statut par défaut
-
-    // Relations
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    private StatutPaiement status = StatutPaiement.EN_ATTENTE;
 
     @ManyToOne
     @JoinColumn(name = "commande_id")
     private Commande commande;
 
-    // Relation optionnelle vers Delivery (pour lier paiement et livraison)
-    @OneToOne
-    @JoinColumn(name = "delivery_id")
-    private Delivery delivery;
+    @Column(name = "user_id")
+    private Long userId;
 
-    // Constructeur pour création (comme dans votre frontend)
+    @Column(name = "delivery_id")
+    private Long deliveryId;
+
     public Payment(String orderId, Double amount, String method, String reference, String notes) {
         this.orderId = orderId;
         this.amount = amount;

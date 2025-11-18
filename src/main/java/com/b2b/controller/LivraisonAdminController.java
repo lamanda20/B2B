@@ -1,7 +1,7 @@
 package com.b2b.controller;
 
 import com.b2b.exception.ResourceNotFoundException;
-import com.b2b.service.LivraisonService; // Importe le service
+import com.b2b.service.LivraisonService; // Correction de l'import
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

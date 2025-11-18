@@ -71,7 +71,7 @@ Dans IntelliJ :
 
 ### 2️⃣ Tester dans le Navigateur
 ```
-http://localhost:8080/api/deliveries
+http://localhost:8082/api/deliveries
 ```
 Devrait retourner `[]` (liste vide) ou des données JSON
 
@@ -82,7 +82,7 @@ Devrait retourner `[]` (liste vide) ou des données JSON
 
 ### 4️⃣ Tester le Calcul des Frais
 ```
-http://localhost:8080/api/deliveries/calculate-shipping?city=Casablanca
+http://localhost:8082/api/deliveries/calculate-shipping?city=Casablanca
 ```
 Devrait retourner :
 ```json
@@ -149,7 +149,7 @@ Le backend maintient **deux structures parallèles** :
 ## 📝 Notes Importantes
 
 ### 🔧 Configuration
-- Port backend : `8080` (défaut Spring Boot)
+- Port backend : `8082` (Spring Boot configuration dans `application.properties`)
 - Port frontend : `8082` (JavaFX)
 - Base de données : H2 (tests) / MySQL (production)
 
@@ -266,4 +266,3 @@ Votre module **"Livraison & Suivi des Commandes"** est maintenant **100% complet
 - ✅ `findByCarrier()` - Recherche par transporteur
 - ✅ `findByCity()` - Recherche par ville
 - ✅ `findByUserId()` - Recherche par utilisateur
-

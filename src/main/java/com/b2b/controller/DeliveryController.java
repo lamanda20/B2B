@@ -1,147 +1,69 @@
 package com.b2b.controller;
 
-import com.b2b.dto.DeliveryDTO;
-import com.b2b.model.StatutCommande;
-import com.b2b.service.DeliveryService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import com.b2b.exception.ResourceNotFoundException;
+import com.b2b.model.Livraison;
+import com.b2b.repository.LivraisonRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-/**
- * Contrôleur REST pour gérer les livraisons
- * Endpoints accessibles via /api/deliveries/**
- */
 @RestController
-@RequestMapping("/deliveries")  // CHANGÉ : Retiré le /api car déjà dans context-path
-@CrossOrigin(originPatterns = "*", allowCredentials = "true") // CORRIGÉ : originPatterns au lieu de origins
+@RequestMapping("/api/deliveries")
+@CrossOrigin(originPatterns = "*", allowCredentials = "true")
 public class DeliveryController {
 
-    private final DeliveryService deliveryService;
+    private final LivraisonRepository livraisonRepository;
 
-    @Autowired
-    public DeliveryController(DeliveryService deliveryService) {
-        this.deliveryService = deliveryService;
+    public DeliveryController(LivraisonRepository livraisonRepository) {
+        this.livraisonRepository = livraisonRepository;
     }
 
     /**
-     * GET /api/deliveries - Liste toutes les livraisons
-     */
-    @GetMapping
-    public ResponseEntity<List<DeliveryDTO>> getAllDeliveries() {
-        List<DeliveryDTO> deliveries = deliveryService.getAllDeliveries();
-        return ResponseEntity.ok(deliveries);
-    }
-
-    /**
-     * GET /api/deliveries/{id} - Détails d'une livraison
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<DeliveryDTO> getDeliveryById(@PathVariable Long id) {
-        return deliveryService.getDeliveryById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * GET /api/deliveries/order/{orderId} - Livraisons d'une commande
-     */
-    @GetMapping("/order/{orderId}")
-    public ResponseEntity<DeliveryDTO> getDeliveryByOrderId(@PathVariable Long orderId) {
-        return deliveryService.getDeliveryByOrderId(orderId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * GET /api/deliveries/status/{status} - Filtrer par statut
-     */
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<DeliveryDTO>> getDeliveriesByStatus(@PathVariable String status) {
-        try {
-            StatutCommande statutEnum = StatutCommande.valueOf(status.toUpperCase());
-            List<DeliveryDTO> deliveries = deliveryService.getDeliveriesByStatus(statutEnum);
-            return ResponseEntity.ok(deliveries);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    /**
-     * POST /api/deliveries - Créer une livraison
-     */
-    @PostMapping
-    public ResponseEntity<DeliveryDTO> createDelivery(@RequestBody Map<String, Object> deliveryData) {
-        try {
-            Long commandeId = Long.valueOf(deliveryData.get("commandeId").toString());
-            String carrier = deliveryData.containsKey("transporteur")
-                ? deliveryData.get("transporteur").toString()
-                : "Maroc Poste";
-
-            DeliveryDTO delivery = deliveryService.createDeliveryForOrder(commandeId, carrier);
-            return ResponseEntity.status(HttpStatus.CREATED).body(delivery);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    /**
-     * POST /api/deliveries/{id}/status - Changer le statut
-     */
-    @PostMapping("/{id}/status")
-    public ResponseEntity<DeliveryDTO> updateDeliveryStatus(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> statusData) {
-        try {
-            String newStatus = statusData.get("status");
-            StatutCommande statutEnum = StatutCommande.valueOf(newStatus.toUpperCase());
-
-            DeliveryDTO delivery = deliveryService.updateDeliveryStatus(id, statutEnum);
-            return ResponseEntity.ok(delivery);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    /**
-     * GET /api/deliveries/calculate-shipping?city={city} - Calculer les frais
+     * GET /api/deliveries/calculate-shipping?city=XXX or ?ville=XXX
      */
     @GetMapping("/calculate-shipping")
-    public ResponseEntity<Map<String, Object>> calculateShipping(@RequestParam String city) {
-        double frais = deliveryService.calculateShippingCost(city);
-
+    public ResponseEntity<Map<String, Object>> calculateShipping(@RequestParam(required = false) String city,
+                                                                   @RequestParam(required = false) String ville) {
+        String targetCity = (city != null && !city.isBlank()) ? city : ville;
+        if (targetCity == null || targetCity.isBlank()) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("message", "Parameter 'city' or 'ville' is required");
+            err.put("status", 400);
+            return ResponseEntity.badRequest().body(err);
+        }
+        Livraison temp = new Livraison();
+        temp.calculerFrais(targetCity);
         Map<String, Object> response = new HashMap<>();
-        response.put("city", city);
-        response.put("shippingCost", frais);
-        response.put("currency", "DH");
-
+        response.put("city", targetCity);
+        response.put("frais", temp.getFraisLivraison());
         return ResponseEntity.ok(response);
     }
 
     /**
-     * GET /api/deliveries/track/{trackingNumber} - Suivre une livraison
+     * POST /api/deliveries - create a new Livraison (accept JSON body)
      */
-    @GetMapping("/track/{trackingNumber}")
-    public ResponseEntity<DeliveryDTO> trackDelivery(@PathVariable String trackingNumber) {
-        return deliveryService.trackDelivery(trackingNumber)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @PostMapping
+    public ResponseEntity<Livraison> createDelivery(@RequestBody Livraison livraison) {
+        if (livraison.getVille() != null) {
+            livraison.calculerFrais(livraison.getVille());
+        }
+        Livraison saved = livraisonRepository.save(livraison);
+        return ResponseEntity.ok(saved);
     }
 
     /**
-     * DELETE /api/deliveries/{id} - Supprimer une livraison
+     * PUT /api/deliveries/{id}/transporteur - Met à jour le transporteur (texte brut)
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDelivery(@PathVariable Long id) {
-        try {
-            deliveryService.deleteDelivery(id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+    @PutMapping("/{id}/transporteur")
+    public ResponseEntity<Void> updateTransporteur(@PathVariable Long id, @RequestBody String transporteur) {
+        Livraison livraison = livraisonRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Livraison non trouvée: " + id));
+
+        livraison.setTransporteur(transporteur);
+        livraisonRepository.save(livraison);
+
+        return ResponseEntity.ok().build();
     }
 }
