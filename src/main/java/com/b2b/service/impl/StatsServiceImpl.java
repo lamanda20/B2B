@@ -5,6 +5,7 @@ import com.b2b.dto.CompanyStatsDTO;
 import com.b2b.dto.ProductStatsDTO;
 import com.b2b.model.*;
         import com.b2b.repository.CommandeRepository;
+import com.b2b.repository.ProduitRepository;
 import com.b2b.service.StatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.*;
 public class StatsServiceImpl implements StatsService {
 
     private final CommandeRepository commandeRepository;
+    private final ProduitRepository produitRepository;
 
     // Savoir les compagies fidelles ( Qui utilisisent notre apllication plusieur fois lors de l'achat )
 
@@ -180,4 +182,17 @@ public class StatsServiceImpl implements StatsService {
 
         return actives.size();
     }
+
+    // Nombre de produits dans la plateforme
+    public int nombreProduits(){
+        return (int) produitRepository.count();
+    }
+
+    // nombre de commandes passee
+    public int nombreCommadesPasser(){
+        return (int) commandeRepository.count();
+    }
+
 }
+
+

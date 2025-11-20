@@ -21,6 +21,8 @@ public interface StatsService {
     List<CategoryStatsDTO> top3Categories();
 
     int nombreCompaniesActives(); // Entreprises ayant fait au moins 1 commande
+    int nombreProduits();
+    int nombreCommadesPasser();
 
 
 

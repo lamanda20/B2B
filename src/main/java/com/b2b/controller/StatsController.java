@@ -75,4 +75,16 @@ public class StatsController {
     public ResponseEntity<Integer> nombreCompaniesActives() {
         return ResponseEntity.ok(statsService.nombreCompaniesActives());
     }
+
+    // Nombre produits
+    @GetMapping("/products/nbr")
+    public ResponseEntity<Integer> nombreProduits() {
+        return ResponseEntity.ok(statsService.nombreProduits());
+    }
+
+    // Nombre commandes passees
+    @GetMapping("/commandes/nbr")
+    public ResponseEntity<Integer> nombreCommadesPasser() {
+        return ResponseEntity.ok(statsService.nombreCommadesPasser());
+    }
 }
