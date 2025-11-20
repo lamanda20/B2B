@@ -13,6 +13,7 @@ import java.util.List;
 @Data
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Panier {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,23 +27,12 @@ public class Panier {
     @JsonIgnoreProperties({"panier"})
     private List<LignePanier> lignes = new ArrayList<>();
 
-    private LocalDate dateCreation;
+    private LocalDate dateCreation = LocalDate.now();
 
     @Transient
     private Double total;
 
-    @PrePersist
-    protected void onCreate() {
-        if (dateCreation == null) {
-            dateCreation = LocalDate.now();
-        }
-    }
-
-    // Méthode ajouterProduit
     public void ajouterProduit(Produit produit, int quantite) {
-        if (lignes == null) {
-            lignes = new ArrayList<>();
-        }
         LignePanier ligne = new LignePanier();
         ligne.setPanier(this);
         ligne.setProduit(produit);
@@ -50,42 +40,22 @@ public class Panier {
         lignes.add(ligne);
     }
 
-    // Méthode supprimerProduit
     public void supprimerProduit(Produit produit) {
-        if (lignes != null) {
-            lignes.removeIf(ligne -> ligne.getProduit().getId().equals(produit.getId()));
-        }
+        lignes.removeIf(ligne -> ligne.getProduit().getId().equals(produit.getId()));
     }
 
-    // Méthode calculerTotal
     public double calculerTotal() {
-        if (lignes == null || lignes.isEmpty()) {
-            return 0.0;
-        }
         return lignes.stream()
                 .mapToDouble(LignePanier::getSousTotal)
                 .sum();
     }
 
-    // Getter pour total (calculé dynamiquement)
     public Double getTotal() {
         return calculerTotal();
     }
 
-    // Méthode afficherContenu
-    public void afficherContenu() {
-        if (lignes == null || lignes.isEmpty()) {
-            System.out.println("Le panier est vide.");
-            return;
-        }
-        System.out.println("=== Contenu du Panier ===");
-        lignes.forEach(LignePanier::afficherLigne);
-        System.out.println("Total: " + calculerTotal() + " DH");
-    }
-
-    // Méthode validerCommande
     public Commande validerCommande() {
-        if (lignes == null || lignes.isEmpty()) {
+        if (lignes.isEmpty()) {
             throw new IllegalStateException("Le panier est vide");
         }
 
@@ -94,14 +64,13 @@ public class Panier {
         commande.setDateCommande(LocalDate.now());
         commande.setStatut(StatutCommande.EN_ATTENTE);
 
-        // Copier les lignes du panier vers la commande
-        for (LignePanier lignePanier : lignes) {
-            LigneCommande ligneCommande = new LigneCommande();
-            ligneCommande.setCommande(commande);
-            ligneCommande.setProduit(lignePanier.getProduit());
-            ligneCommande.setQuantite(lignePanier.getQuantite());
-            ligneCommande.setPrixUnitaire(lignePanier.getProduit().getPrice().doubleValue());
-            commande.ajouterLigne(ligneCommande);
+        for (LignePanier lp : lignes) {
+            LigneCommande lcmd = new LigneCommande();
+            lcmd.setCommande(commande);
+            lcmd.setProduit(lp.getProduit());
+            lcmd.setQuantite(lp.getQuantite());
+            lcmd.setPrixUnitaire(lp.getProduit().getPrice().doubleValue());
+            commande.ajouterLigne(lcmd);
         }
 
         return commande;
