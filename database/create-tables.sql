@@ -29,6 +29,36 @@ CREATE TABLE users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ===============================
+-- TABLE: companies (pour la gestion des entreprises)
+-- ===============================
+CREATE TABLE companies (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    address VARCHAR(255),
+    city VARCHAR(100),
+    phone VARCHAR(20),
+    website VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===============================
+-- TABLE: app_users (pour l'authentification)
+-- ===============================
+CREATE TABLE app_users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    enabled BOOLEAN DEFAULT TRUE,
+    must_change_password BOOLEAN DEFAULT FALSE,
+    company_id BIGINT,
+    created_at DATE,
+    CONSTRAINT fk_app_user_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ===============================
 -- TABLE: clients (doit être créée en second)
 -- ===============================
 CREATE TABLE clients (
@@ -112,6 +142,7 @@ CREATE TABLE lignes_commande (
     produit_id BIGINT NOT NULL,
     quantite INT NOT NULL DEFAULT 1,
     prix_unitaire DECIMAL(10, 2) NOT NULL,
+    seller_line_prix DOUBLE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_ligne_commande_commande FOREIGN KEY (commande_id) REFERENCES commandes(id) ON DELETE CASCADE,
     CONSTRAINT fk_ligne_commande_produit FOREIGN KEY (produit_id) REFERENCES produits(id) ON DELETE CASCADE

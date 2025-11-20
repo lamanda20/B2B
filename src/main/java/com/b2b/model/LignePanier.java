@@ -10,7 +10,7 @@ public class LignePanier {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_ligne_panier")
+    @Column(name = "id")
     private Long idLignePanier;
 
     @ManyToOne

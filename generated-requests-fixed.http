@@ -1,0 +1,44 @@
+### Test endpoints corrected (no duplicate /api)
+
+### Get my company
+GET http://localhost:8082/api/account/my-company
+
+### List commandes
+GET http://localhost:8082/api/commandes
+
+### List commandes (alternative path if provided)
+GET http://localhost:8082/api/commandes/all
+
+### Get a commande by ref (replace {ref})
+GET http://localhost:8082/api/commandes/ref/{ref}
+
+### Create a commande (example)
+POST http://localhost:8082/api/commandes
+Content-Type: application/json
+
+{
+  "refCommande": "CMD-TEST-001",
+  "dateCommande": "2025-11-14",
+  "company": { "id": 1 }
+}
+
+### Get deliveries
+GET http://localhost:8082/api/deliveries
+
+### Get my account
+GET http://localhost:8082/api/account/my-company
+
+### Payment example (adjust to your controller path)
+POST http://localhost:8082/api/payments
+Content-Type: application/json
+
+{
+  "moyen": "Carte",
+  "produit": "Test",
+  "company": {"id":1},
+  "date": "2025-11-14",
+  "amount": 100.0,
+  "status": "EN_ATTENTE",
+  "commande": {"refCommande": "CMD-TEST-001"}
+}
+

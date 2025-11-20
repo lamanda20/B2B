@@ -12,12 +12,12 @@ public class LigneCommande {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_ligne_commande")
+    @Column(name = "id")
     private Long idLigneCommande;
 
     @ManyToOne
     @JoinColumn(name = "commande_id")
-    @JsonIgnoreProperties({"lignes", "livraison", "client"})
+    @JsonIgnoreProperties({"lignes", "livraison", "Company"})
     private Commande commande;
 
     @ManyToOne

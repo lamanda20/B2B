@@ -9,7 +9,7 @@ import java.util.List;
 @Entity
 @Table(name = "produits")
 @Data
-@JsonIgnoreProperties({"lignesCommande", "lignesPanier", "hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({"lignesCommande", "lignesPanier", "avis", "hibernateLazyInitializer", "handler"})
 public class Produit {
 
     @Id
@@ -26,11 +26,14 @@ public class Produit {
     @JsonIgnoreProperties({"produits", "users"})
     private Company company;
 
-    // Auto-référencement: un produit peut être une catégorie
     @ManyToOne
-    @JoinColumn(name = "categorie_id")
-    @JsonIgnoreProperties({"categorie", "company", "lignesCommande", "lignesPanier"})
-    private Produit categorie;
+    @JoinColumn(name = "categorie_id", referencedColumnName = "id_cat")
+    @JsonIgnoreProperties({"produits"})
+    private Categorie categorie;
+
+    @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"produit"})
+    private List<Avis> avis;
 
     @OneToMany(mappedBy = "produit")
     @JsonIgnoreProperties({"produit"})

@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/suivi") // URL dédiée au suivi client
+@RequestMapping("/api/suivi") // URL dédiée au suivi Company
 public class LivraisonSuiviController {
 
     private final CommandeRepository commandeRepository;
@@ -21,7 +21,7 @@ public class LivraisonSuiviController {
     }
 
     /**
-     * Endpoint pour le client final, pour suivre sa commande par sa référence.
+     * Endpoint pour le Company final, pour suivre sa commande par sa référence.
      * URL: GET /api/suivi/{refCommande}
      */
     @GetMapping("/{refCommande}")
@@ -42,8 +42,8 @@ public class LivraisonSuiviController {
                 commande.getRefCommande(),
                 commande.getStatut(),
                 livraison.getTransporteur(),
-                livraison.getDateLivraisonEstimee(),
-                livraison.getDateLivraisonEstimee()
+                livraison.getDateEstimee(),
+                livraison.getDateEnvoi()
         );
 
         // 4. Renvoyer le DTO avec un statut 200 OK
