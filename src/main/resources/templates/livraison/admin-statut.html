@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Modifier le statut</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .admin-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .admin-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .admin-header {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c2c7;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .info-box p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .info-box strong {
+            color: #333;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .statut-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-card">
+            <div class="admin-header">
+                <h1>Modifier le statut de la commande</h1>
+            </div>
+
+            <!-- Messages flash -->
+            <div class="alert alert-success" th:if="${success}" th:text="${success}">
+                Statut mis à jour avec succès
+            </div>
+            <div class="alert alert-error" th:if="${error}" th:text="${error}">
+                Erreur lors de la mise à jour
+            </div>
+
+            <!-- Informations de la commande -->
+            <div class="info-box">
+                <p><strong>Référence:</strong> <span th:text="${commande.refCommande}">CMD-12345678</span></p>
+                <p><strong>Date:</strong> <span th:text="${#temporals.format(commande.dateCommande, 'dd/MM/yyyy')}">08/11/2025</span></p>
+                <p><strong>Client:</strong> <span th:text="${commande.client?.nom ?: 'N/A'}">John Doe</span></p>
+                <p>
+                    <strong>Statut actuel:</strong>
+                    <span class="statut-badge"
+                          th:style="'background: ' + ${commande.statut == T(com.b2b.model.StatutCommande).LIVREE ? '#d1e7dd; color: #0f5132' : '#cfe2ff; color: #084298'}"
+                          th:text="${commande.statut}">EN_PREPARATION</span>
+                </p>
+            </div>
+
+            <!-- Formulaire de mise à jour -->
+            <form th:action="@{/livraison/admin/statut/{id}(id=${commande.id})}" method="post">
+                <div class="form-group">
+                    <label for="nouveauStatut">Nouveau statut *</label>
+                    <select id="nouveauStatut" name="nouveauStatut" required>
+                        <option value="">-- Sélectionnez un statut --</option>
+                        <option th:each="statut : ${statuts}"
+                                th:value="${statut}"
+                                th:text="${statut}"
+                                th:selected="${statut == commande.statut}">
+                            EN_PREPARATION
+                        </option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <button type="submit" class="btn btn-primary">💾 Mettre à jour</button>
+                    <a href="/livraison/admin/commandes" class="btn btn-secondary">← Retour à la liste</a>
+                </div>
+            </form>
+
+            <!-- Guide des statuts -->
+            <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+                <h3>Guide des statuts</h3>
+                <ul style="color: #666; line-height: 1.8;">
+                    <li><strong>EN_ATTENTE_PAIEMENT:</strong> En attente du paiement</li>
+                    <li><strong>EN_PREPARATION:</strong> Commande en cours de préparation</li>
+                    <li><strong>EXPEDIEE:</strong> Colis expédié (déclenche la livraison)</li>
+                    <li><strong>LIVREE:</strong> Commande livrée au client</li>
+                    <li><strong>ANNULEE:</strong> Commande annulée</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

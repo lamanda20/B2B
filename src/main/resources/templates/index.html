@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">B2B Application</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 th:text="${title}">B2B Application</h1>
+            <nav>
+                <a th:href="@{/}">Accueil</a>
+                <a th:href="@{/dashboard}">Dashboard</a>
+                <a th:href="@{/api/public/health}">API Health</a>
+            </nav>
+        </header>
+
+        <main>
+            <div class="welcome-section">
+                <h2 th:text="${message}">Bienvenue</h2>
+                <p>Cette application utilise l'architecture MVC (Model-View-Controller)</p>
+
+                <div class="info-cards">
+                    <div class="card">
+                        <h3>Model</h3>
+                        <p>Entites JPA et logique metier</p>
+                        <code>src/main/java/com/b2b/model/</code>
+                    </div>
+
+                    <div class="card">
+                        <h3>View</h3>
+                        <p>Templates Thymeleaf</p>
+                        <code>src/main/resources/templates/</code>
+                    </div>
+
+                    <div class="card">
+                        <h3>Controller</h3>
+                        <p>Controllers Spring MVC</p>
+                        <code>src/main/java/com/b2b/controller/</code>
+                    </div>
+                </div>
+
+                <div class="quick-links">
+                    <h3>Liens Rapides</h3>
+                    <ul>
+                        <li><a th:href="@{/dashboard}">Dashboard</a></li>
+                        <li><a th:href="@{/api/public/health}" target="_blank">API Health Check</a></li>
+                        <li><a th:href="@{/h2-console}" target="_blank">H2 Console (Test Mode)</a></li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 B2B Application - Spring Boot + Thymeleaf</p>
+        </footer>
+    </div>
+</body>
+</html>
+
