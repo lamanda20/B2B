@@ -1,4 +1,4 @@
-package com.b2b;
+package com.b2b.avis;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

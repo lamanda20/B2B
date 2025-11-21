@@ -1,4 +1,4 @@
-package com.b2b.exception;
+package com.b2b.avis.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

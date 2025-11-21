@@ -1,4 +1,4 @@
-package com.b2b;
+package com.b2b.avis;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

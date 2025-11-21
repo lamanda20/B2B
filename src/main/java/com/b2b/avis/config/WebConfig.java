@@ -1,4 +1,4 @@
-package com.b2b.config;
+package com.b2b.avis.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
