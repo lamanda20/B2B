@@ -38,6 +38,16 @@ public class CompanyController {
         return companyService.updateCompany(id, companyDto);
     }
 
+    @PutMapping("/enable/{id}")
+    public CompanyDto enableCompany(@PathVariable Long id) {
+        return companyService.enableCompany(id);
+    }
+
+    @PutMapping("/disable/{id}")
+    public CompanyDto disableCompany(@PathVariable Long id) {
+        return companyService.disableCompany(id);
+    }
+
     @DeleteMapping("/{id}")
     public void deleteCompany(@PathVariable Long id) {
         companyService.deleteCompany(id);
