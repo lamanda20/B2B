@@ -1,100 +1,54 @@
 package com.b2b.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "commandes")
 @Data
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@AllArgsConstructor
+@NoArgsConstructor
 public class Commande {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    private int id ;
     private String refCommande;
-    private LocalDate dateCommande;
-
-    @ManyToOne
-    @JoinColumn(name = "company_id")
-    @JsonIgnoreProperties({"produits"})
-    private Company company;
-
-    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties({"commande"})
+    private Client client ;
     private List<LigneCommande> lignes = new ArrayList<>();
+    private LocalDate dateCommande ;
+    private StatutCommande statut = StatutCommande.EN_COURS;
 
-    @Enumerated(EnumType.STRING)
-    private StatutCommande statut;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "livraison_id", referencedColumnName = "idLivraison")
-    @JsonIgnoreProperties({"commande"})
-    private Livraison livraison;
-
-    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties({"commande", "company"})
-    private List<Payment> paiements = new ArrayList<>();
-
-    @PrePersist
-    protected void onCreate() {
-        if (dateCommande == null) {
-            dateCommande = LocalDate.now();
-        }
-        if (refCommande == null) {
-            refCommande = "CMD-" + System.currentTimeMillis();
-        }
+    public void ajouterligne(LigneCommande lignecmd){
+        lignecmd.setCommande(this);
+        lignes.add(lignecmd);
     }
-
-    // Méthode ajouterLigneCommande
-    public void ajouterLigneCommande(LigneCommande ligne) {
-        if (lignes == null) {
-            lignes = new ArrayList<>();
-        }
-        lignes.add(ligne);
-        ligne.setCommande(this);
-    }
-
-    // Alias ajouterLigne
-    public void ajouterLigne(LigneCommande ligne) {
-        ajouterLigneCommande(ligne);
-    }
-
-    // Méthode calculerTotal
-    public double calculerTotal() {
-        double total = 0.0;
-        if (lignes != null && !lignes.isEmpty()) {
-            total = lignes.stream()
-                    .mapToDouble(LigneCommande::getSousTotal)
-                    .sum();
-        }
-        if (livraison != null) {
-            total += livraison.getFraisLivraison();
+    public double calculerTotal(){
+        double total= 0.0;
+        for ( LigneCommande lcm : lignes){
+            total += lcm.getSousTotal();
         }
         return total;
     }
 
-    // Méthode validerCommande
-    public StatutCommande validerCommande() {
-        this.statut = StatutCommande.VALIDEE;
-        return this.statut;
+    public StatutCommande suivreCommande(){
+        return this.getStatut();
+    }
+    public void afficherCommande(){
+        System.out.println("Commande numéro :"+id+" effectué le :" + dateCommande);
+        if ( client != null){
+            System.out.println("Client :" +  statut );
+        }
+        System.out.println("Statut :" +  statut );
+        System.out.println("-----------------------------------------------");
+        for (LigneCommande lc : lignes){
+            System.out.println("Produit :" + lc.getProduit().getNom()
+            + "quantité: " +lc.getQuantite()+ " , prix unitaire : " + lc.getPrixUnitaire() + ", sous-total " + lc.getSousTotal());
+
+        }
+        System.out.println("total " + calculerTotal() + " DH" );
     }
 
-    // Méthode afficherCommande
-    public void afficherCommande() {
-        System.out.println("=== Commande #" + refCommande + " ===");
-        System.out.println("Date: " + dateCommande);
-        System.out.println("Statut: " + statut);
-        System.out.println("Company: " + (company != null ? company.getName() : "N/A"));
-        System.out.println("--- Lignes de commande ---");
-        if (lignes != null && !lignes.isEmpty()) {
-            lignes.forEach(LigneCommande::afficherLigne);
-        }
-        System.out.println("Total: " + calculerTotal() + " DH");
-    }
 }

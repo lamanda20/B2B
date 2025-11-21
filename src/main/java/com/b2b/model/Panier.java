@@ -1,109 +1,103 @@
 package com.b2b.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
-@Entity
-@Table(name = "paniers")
+@EqualsAndHashCode
 @Data
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@AllArgsConstructor
+@NoArgsConstructor
 public class Panier {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id ;
+    private Client client;
+    private List<LignePanier> lignes = new ArrayList<>() ;
+    private LocalDate dateCreation = LocalDate.now() ;
+    private double total;
 
-    @OneToOne
-    @JoinColumn(name = "company_id")
-    @JsonIgnoreProperties({"produits"})
-    private Company company;
+    public void ajouterProduit(Produit p , int quantite){
+        boolean produitTrouve = false ;
+        for (LignePanier lp : lignes){
+            if (lp.getProduit().equals(p)) {
+                lp.setQuantite(lp.getQuantite() + quantite);
+                produitTrouve = true;
+                break;
+            }
 
-    @OneToMany(mappedBy = "panier", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties({"panier"})
-    private List<LignePanier> lignes = new ArrayList<>();
-
-    private LocalDate dateCreation;
-
-    @Transient
-    private Double total;
-
-    @PrePersist
-    protected void onCreate() {
-        if (dateCreation == null) {
-            dateCreation = LocalDate.now();
+        }
+        if (!produitTrouve){
+            lignes.add(new LignePanier(lignes.size()+1,quantite,this,p));
+        }
+        total=calculerTotal();
+    }
+    public void supprimerProduit(Produit p){
+        for (int i=0;i <lignes.size();i++){
+            LignePanier lp =lignes.get(i);
+            if(lp.getProduit().equals(p)){
+                int qt=lp.getQuantite();
+                if (qt > 1){
+                    lp.setQuantite(lp.getQuantite()-1);
+                }else {
+                    lignes.remove(i);
+                }
+                total=calculerTotal();
+                break;
+            }
         }
     }
-
-    // Méthode ajouterProduit
-    public void ajouterProduit(Produit produit, int quantite) {
-        if (lignes == null) {
-            lignes = new ArrayList<>();
+    public void viderPanier(){
+        lignes.clear();
+        total= 0.0 ;
+    }
+    public double calculerTotal(){
+        total = 0.0 ;
+        for(LignePanier lp : lignes){
+            total += lp.getSousTotal();
         }
-        LignePanier ligne = new LignePanier();
-        ligne.setPanier(this);
-        ligne.setProduit(produit);
-        ligne.setQuantite(quantite);
-        lignes.add(ligne);
+        return total ;
+    }
+    public void afficherContenu(){
+        System.out.println("Votre panier : ");
+        for (LignePanier lp : lignes){
+            System.out.println(" Produit : "+ lp.getProduit() + " quantité :" + lp.getQuantite() +" sous-total: "+ lp.getSousTotal());
+        }
+        System.out.println("total du panier : "+total +"DH");
     }
 
-    // Méthode supprimerProduit
-    public void supprimerProduit(Produit produit) {
-        if (lignes != null) {
-            lignes.removeIf(ligne -> ligne.getProduit().getId().equals(produit.getId()));
+    public Commande validerCommande(){
+
+        // verifier si le panier est vide
+        if (lignes.isEmpty()){
+            System.out.println("Le panier est vide, impossible de valider la commande. ");
+            return null;
         }
-    }
-
-    // Méthode calculerTotal
-    public double calculerTotal() {
-        if (lignes == null || lignes.isEmpty()) {
-            return 0.0;
-        }
-        return lignes.stream()
-                .mapToDouble(LignePanier::getSousTotal)
-                .sum();
-    }
-
-    // Getter pour total (calculé dynamiquement)
-    public Double getTotal() {
-        return calculerTotal();
-    }
-
-    // Méthode afficherContenu
-    public void afficherContenu() {
-        if (lignes == null || lignes.isEmpty()) {
-            System.out.println("Le panier est vide.");
-            return;
-        }
-        System.out.println("=== Contenu du Panier ===");
-        lignes.forEach(LignePanier::afficherLigne);
-        System.out.println("Total: " + calculerTotal() + " DH");
-    }
-
-    // Méthode validerCommande
-    public Commande validerCommande() {
-        if (lignes == null || lignes.isEmpty()) {
-            throw new IllegalStateException("Le panier est vide");
-        }
-
+        List<LigneCommande> lc = new ArrayList<>();
         Commande commande = new Commande();
-        commande.setCompany(this.company);
+        commande.setLignes(lc);
         commande.setDateCommande(LocalDate.now());
-        commande.setStatut(StatutCommande.EN_ATTENTE);
+        commande.setStatut(StatutCommande.EN_COURS);
+        commande.setClient(client);
 
-        // Copier les lignes du panier vers la commande
-        for (LignePanier lignePanier : lignes) {
-            LigneCommande ligneCommande = new LigneCommande();
-            ligneCommande.setCommande(commande);
-            ligneCommande.setProduit(lignePanier.getProduit());
-            ligneCommande.setQuantite(lignePanier.getQuantite());
-            ligneCommande.setPrixUnitaire(lignePanier.getProduit().getPrice().doubleValue());
-            commande.ajouterLigne(ligneCommande);
+        // geneeration de reference lisible
+        String ref= "CMD-"+LocalDate.now().getYear()+"-"+(int)(Math.random()* 10000);
+        for (LignePanier lp : lignes){
+            LigneCommande lcmd = new LigneCommande();
+            lcmd.setCommande(commande);
+            lcmd.setProduit(lp.getProduit());
+            lcmd.setQuantite(lp.getQuantite());
+            lcmd.setPrixUnitaire(lp.getProduit().getPrix());
+            lc.add(lcmd);
+
         }
-
-        return commande;
+        viderPanier();
+        System.out.println("commande validé" +commande.getRefCommande()+" Date "+commande.getDateCommande());
+        System.out.println("Total :"+commande.calculerTotal()+"DH");
+        return commande ;
     }
+
 }
