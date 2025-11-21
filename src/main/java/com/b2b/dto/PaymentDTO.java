@@ -3,6 +3,8 @@ package com.b2b.dto;
 import com.b2b.model.Payment;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class PaymentDTO {
 
@@ -21,7 +23,7 @@ public class PaymentDTO {
         this.orderId = payment.getOrderId();
         this.amount = payment.getAmount();
         this.method = payment.getMethod();
-        this.status = payment.getStatus() != null ? payment.getStatus().getLabel() : null;  // Utilise l'enum StatutPaiement
+        this.status = payment.getStatus().getLabel();  // Utilise l'enum PaymentStatus
         this.date = payment.getDate() != null ? payment.getDate().toString() : null;
         this.reference = payment.getReference();
         this.transactionId = payment.getTransactionId();
