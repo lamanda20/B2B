@@ -32,6 +32,9 @@ public class Company {
     @Column(nullable = false, length = 180)
     private String email;
 
+    @Column(nullable = false, length = 30, unique = true)
+    private String ice;
+
     @Column(nullable = false, length = 255)
     private String password; // hashé en BCrypt
 
@@ -77,4 +80,8 @@ public class Company {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getIce() { return ice; }
+    public void setIce(String ice) { this.ice = ice; }
+
 }
