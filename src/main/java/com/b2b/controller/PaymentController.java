@@ -2,6 +2,7 @@ package com.b2b.controller;
 
 import com.b2b.dto.PaymentDTO;
 import com.b2b.model.Payment;
+import com.b2b.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

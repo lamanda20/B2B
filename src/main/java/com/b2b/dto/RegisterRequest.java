@@ -9,6 +9,10 @@ public class RegisterRequest {
     private String city;
     private String phone;
     private String website;
+    private String ice;
+
+
+
 
     // Getters / Setters
     public String getName() { return name; }
@@ -31,4 +35,7 @@ public class RegisterRequest {
 
     public String getWebsite() { return website; }
     public void setWebsite(String website) { this.website = website; }
+
+    public String getIce() { return ice; }
+    public void setIce(String ice) { this.ice = ice; }
 }

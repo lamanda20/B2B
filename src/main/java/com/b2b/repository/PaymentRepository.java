@@ -23,7 +23,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByCommandeId(Long commandeId);
 
     // Recherche par user
-    List<Payment> findByUserId(Long userId);
+    // List<Payment> findByUserId(Long userId);
 
     // Recherche par orderId (si orderId est unique)
     Optional<Payment> findByOrderId(String orderId);

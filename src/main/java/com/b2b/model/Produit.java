@@ -17,11 +17,18 @@ public class Produit {
 
     private String name;
     private String description;
-    private BigDecimal price;
+    private double price;
     private int stock;
-    private Long sellerId;
+    @ManyToOne
+    @JoinColumn(name = "company_id")
+    private Company company;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categorie_id")
+    private Categorie categorie;
+
 
 
     @OneToMany(mappedBy = "produit")
     private List<LigneCommande> lignesCommande;
+
 }

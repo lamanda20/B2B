@@ -66,10 +66,16 @@ public class AuthController {
                     .status(HttpStatus.CONFLICT)
                     .body(ApiResponse.error("Cet email est déjà utilisé"));
         }
+        if (companies.existsByIce(req.getIce())) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error("Cet ICE est déjà utilisé"));
+        }
 
         Company c = new Company();
         c.setName(req.getName());
         c.setEmail(email);
+        c.setIce(req.getIce());
         c.setPassword(encoder.encode(req.getPassword())); // hash BCrypt
         c.setAddress(req.getAddress());
         c.setCity(req.getCity());

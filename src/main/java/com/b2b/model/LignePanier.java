@@ -13,7 +13,7 @@ public class LignePanier {
     private Produit produit;
     public double getSousTotal() {
        if(produit != null){
-           return produit.getPrix() * quantite ;
+           return produit.getPrice() * quantite ;
        }
        return 0.0 ;
     }

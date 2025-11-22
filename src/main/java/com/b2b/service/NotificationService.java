@@ -26,8 +26,7 @@ public class NotificationService {
     }
 
     public List<Notification> getAll(Long userId) {
-        return repo.findByUserIdOrderByCreatedAtDesc(userId);
-    }
+     return repo.findByUserIdOrderByCreatedAtDesc(userId);}
 
     public void markSeen(Long id) {
         repo.findById(id).ifPresent(n -> {
@@ -35,4 +34,6 @@ public class NotificationService {
             repo.save(n);
         });
     }
+
+
 }

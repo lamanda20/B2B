@@ -33,8 +33,8 @@ public class Payment {
 
     // Relations
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "Company_id")
+    private Company company;
 
     @ManyToOne
     @JoinColumn(name = "commande_id")
@@ -43,7 +43,7 @@ public class Payment {
     // Relation optionnelle vers Delivery (pour lier paiement et livraison)
     @OneToOne
     @JoinColumn(name = "delivery_id")
-    private Delivery delivery;
+    private Livraison delivery;
 
     // Constructeur pour création (comme dans votre frontend)
     public Payment(String orderId, Double amount, String method, String reference, String notes) {

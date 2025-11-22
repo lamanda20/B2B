@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 public class Panier {
     private int id ;
-    private Client client;
+    private Company company;
     private List<LignePanier> lignes = new ArrayList<>() ;
     private LocalDate dateCreation = LocalDate.now() ;
     private double total;
@@ -81,7 +81,7 @@ public class Panier {
         commande.setLignes(lc);
         commande.setDateCommande(LocalDate.now());
         commande.setStatut(StatutCommande.EN_COURS);
-        commande.setClient(client);
+        commande.setCompany(company);
 
         // geneeration de reference lisible
         String ref= "CMD-"+LocalDate.now().getYear()+"-"+(int)(Math.random()* 10000);
@@ -90,7 +90,7 @@ public class Panier {
             lcmd.setCommande(commande);
             lcmd.setProduit(lp.getProduit());
             lcmd.setQuantite(lp.getQuantite());
-            lcmd.setPrixUnitaire(lp.getProduit().getPrix());
+            lcmd.setPrixUnitaire(lp.getProduit().getPrice());
             lc.add(lcmd);
 
         }

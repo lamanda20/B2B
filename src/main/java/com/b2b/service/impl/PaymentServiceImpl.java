@@ -2,7 +2,7 @@ package com.b2b.service.impl;
 
 import com.b2b.dto.PaymentDTO;
 import com.b2b.model.Payment;
-import com.b2b.model.StatutPaiement;
+import com.b2b.model.PaymentStatus;
 import com.b2b.repository.PaymentRepository;
 import com.b2b.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     public PaymentDTO createPayment(Payment payment) {
-        payment.setStatus(StatutPaiement.EN_ATTENTE);
+        payment.setStatus(PaymentStatus.EN_ATTENTE);
         payment.setDate(LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);
         return new PaymentDTO(saved);
@@ -35,10 +35,10 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentDTO validatePayment(Long id) {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Paiement non trouvé"));
-        if (payment.getStatus() != StatutPaiement.EN_ATTENTE) {
+        if (payment.getStatus() != PaymentStatus.EN_ATTENTE) {
             throw new RuntimeException("Paiement ne peut pas être validé (statut actuel : " + payment.getStatus().getLabel() + ")");
         }
-        payment.setStatus(StatutPaiement.VALIDE);
+        payment.setStatus(PaymentStatus.VALIDÉ);
         payment.setValidationDate(LocalDateTime.now());
         payment.setHistory((payment.getHistory() != null ? payment.getHistory() + "\n" : "") + "Validé le " + LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);
@@ -48,10 +48,10 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentDTO cancelPayment(Long id) {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Paiement non trouvé"));
-        if (payment.getStatus() != StatutPaiement.EN_ATTENTE) {
+        if (payment.getStatus() != PaymentStatus.EN_ATTENTE) {
             throw new RuntimeException("Paiement ne peut pas être annulé (statut actuel : " + payment.getStatus().getLabel() + ")");
         }
-        payment.setStatus(StatutPaiement.REFUSE);
+        payment.setStatus(PaymentStatus.REFUSÉ);
         payment.setHistory((payment.getHistory() != null ? payment.getHistory() + "\n" : "") + "Annulé le " + LocalDateTime.now());
         Payment saved = paymentRepository.save(payment);
         return new PaymentDTO(saved);

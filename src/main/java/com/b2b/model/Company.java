@@ -44,6 +44,9 @@ public class Company {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private boolean mustChangePassword = false;
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
@@ -84,4 +87,6 @@ public class Company {
     public String getIce() { return ice; }
     public void setIce(String ice) { this.ice = ice; }
 
+    public void setMustChangePassword(boolean b) {
+    }
 }
