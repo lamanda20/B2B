@@ -1,43 +1,24 @@
 package com.b2b.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
+
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "lignes_commande")
 @Data
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@AllArgsConstructor
+@NoArgsConstructor
 public class LigneCommande {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "commande_id")
-    @JsonIgnoreProperties({"lignes", "livraison", "user"})
+    private int idLigneCommande;
     private Commande commande;
-
-    @ManyToOne
-    @JoinColumn(name = "produit_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Produit produit;
-
     private int quantite;
     private double prixUnitaire;
 
-    // Méthode pour calculer le sous-total
-    public double getSousTotal() {
+    public double getSousTotal(){
         return quantite * prixUnitaire;
     }
-
-    // Méthode pour afficher la ligne
     public void afficherLigne() {
-        System.out.println("Ligne de commande: " +
-            (produit != null ? produit.getName() : "N/A") +
-            " - Quantité: " + quantite +
-            " - Prix unitaire: " + prixUnitaire +
-            " - Sous-total: " + getSousTotal());
+        System.out.println(produit.getNom() + " x " + quantite + " → " + getSousTotal() + " MAD");
     }
 }

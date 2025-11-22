@@ -105,7 +105,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Référence</th>
-                    <th>Client</th>
+                    <th>Company</th>
                     <th>Date</th>
                     <th>Statut</th>
                     <th>Transporteur</th>
@@ -116,7 +116,7 @@
                 <tr th:each="commande : ${commandes}">
                     <td th:text="${commande.id}">1</td>
                     <td><strong th:text="${commande.refCommande}">CMD-12345678</strong></td>
-                    <td th:text="${commande.client?.nom ?: 'N/A'}">John Doe</td>
+                    <td th:text="${commande.Company?.nom ?: 'N/A'}">John Doe</td>
                     <td th:text="${#temporals.format(commande.dateCommande, 'dd/MM/yyyy')}">08/11/2025</td>
                     <td>
                         <span class="statut-badge"
@@ -272,7 +272,7 @@
                 <h3>💡 Où trouver ma référence ?</h3>
                 <ul>
                     <li>Dans l'email de confirmation de commande</li>
-                    <li>Dans votre espace client</li>
+                    <li>Dans votre espace Company</li>
                     <li>Format: CMD-XXXXXXXX (8 caractères)</li>
                 </ul>
             </div>

@@ -34,7 +34,7 @@ public class Delivery {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    private AdminUser user;
 
     @OneToOne
     @JoinColumn(name = "order_id")
@@ -49,9 +49,9 @@ public class Delivery {
 
             // Créer l'adresse
             this.shippingAddress = new ShippingAddress(
-                livraison.getAdresse(),
-                livraison.getVille(),
-                livraison.getTelephone()
+                    livraison.getAdresse(),
+                    livraison.getVille(),
+                    livraison.getTelephone()
             );
 
             this.carrier = livraison.getTransporteur();
@@ -59,7 +59,8 @@ public class Delivery {
             this.shippingDate = livraison.getDateEnvoi();
             this.estimatedDeliveryDate = livraison.getDateEstimee();
             this.trackingNumber = "TRK-" + livraison.getIdLivraison();
-            this.user = livraison.getUser();
+            // Livraison model n'a pas de getUser(), on ne peut pas mapper directement
+            this.user = null;
             this.order = livraison.getCommande();
 
             // Convertir le statut
@@ -88,7 +89,7 @@ public class Delivery {
         livraison.setFraisLivraison(this.shippingCost != null ? this.shippingCost : 0.0);
         livraison.setDateEnvoi(this.shippingDate);
         livraison.setDateEstimee(this.estimatedDeliveryDate);
-        livraison.setUser(this.user);
+        // Ne pas appeler livraison.setUser(...) car la classe Livraison n'expose pas ce setter
         livraison.setCommande(this.order);
 
         return livraison;
@@ -156,4 +157,3 @@ public class Delivery {
         return info.toString();
     }
 }
-

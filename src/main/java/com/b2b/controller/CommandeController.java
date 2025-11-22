@@ -2,7 +2,7 @@ package com.b2b.controller;
 
 import com.b2b.model.Commande;
 import com.b2b.model.StatutCommande;
-import com.b2b.repository.CommandeRepository;
+import com.b2b.service.CommandeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,50 +17,32 @@ import java.util.Map;
  * Endpoints accessibles via /api/commandes/**
  */
 @RestController
-@RequestMapping("/commandes")
+@RequestMapping("/api/commandes")
 @CrossOrigin(originPatterns = "*", allowCredentials = "true")
 public class CommandeController {
 
-    private final CommandeRepository commandeRepository;
+    private final CommandeService commandeService;
 
     @Autowired
-    public CommandeController(CommandeRepository commandeRepository) {
-        this.commandeRepository = commandeRepository;
+    public CommandeController(CommandeService commandeService) {
+        this.commandeService = commandeService;
     }
 
     /**
      * GET /api/commandes - Liste toutes les commandes
      */
     @GetMapping
-    @Transactional(readOnly = true)
     public ResponseEntity<List<Commande>> getAllCommandes() {
-        List<Commande> commandes = commandeRepository.findAll();
-        // Forcer le chargement des collections lazy
-        commandes.forEach(commande -> {
-            if (commande.getLignes() != null) {
-                commande.getLignes().size(); // Force lazy loading
-            }
-            if (commande.getUser() != null) {
-                commande.getUser().getNom(); // Force lazy loading
-            }
-        });
-        return ResponseEntity.ok(commandes);
+        return ResponseEntity.ok(commandeService.findAll());
     }
 
     /**
      * GET /api/commandes/{id} - Détails d'une commande
      */
     @GetMapping("/{id}")
-    @Transactional(readOnly = true)
     public ResponseEntity<Commande> getCommandeById(@PathVariable Long id) {
-        return commandeRepository.findById(id)
-                .map(commande -> {
-                    // Forcer le chargement des collections lazy
-                    if (commande.getLignes() != null) {
-                        commande.getLignes().size();
-                    }
-                    return ResponseEntity.ok(commande);
-                })
+        return commandeService.findById(id)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -68,17 +50,18 @@ public class CommandeController {
      * GET /api/commandes/ref/{refCommande} - Rechercher par référence
      */
     @GetMapping("/ref/{refCommande}")
-    @Transactional(readOnly = true)
     public ResponseEntity<Commande> getCommandeByRef(@PathVariable String refCommande) {
-        return commandeRepository.findByRefCommande(refCommande)
-                .map(commande -> {
-                    // Forcer le chargement des collections lazy
-                    if (commande.getLignes() != null) {
-                        commande.getLignes().size();
-                    }
-                    return ResponseEntity.ok(commande);
-                })
+        return commandeService.findByRefCommande(refCommande)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * GET /api/commandes/Company/{CompanyId} - Commandes d'un Company
+     */
+    @GetMapping("/Company/{CompanyId}")
+    public ResponseEntity<List<Commande>> getCommandesByCompany(@PathVariable Long CompanyId) {
+        return ResponseEntity.ok(commandeService.findByCompany(CompanyId));
     }
 
     /**
@@ -86,61 +69,54 @@ public class CommandeController {
      */
     @PostMapping
     public ResponseEntity<Commande> createCommande(@RequestBody Commande commande) {
-        try {
-            // Définir le statut par défaut si non fourni
-            if (commande.getStatut() == null) {
-                commande.setStatut(StatutCommande.EN_ATTENTE);
-            }
+        Commande created = commandeService.create(commande);
+        return ResponseEntity.ok(created);
+    }
 
-            Commande saved = commandeRepository.save(commande);
-            return ResponseEntity.ok(saved);
+    /**
+     * POST /api/commandes/{id}/valider - Valider une commande
+     */
+    @PostMapping("/{id}/valider")
+    public ResponseEntity<Map<String, Object>> validerCommande(@PathVariable Long id) {
+        try {
+            StatutCommande statut = commandeService.validerCommande(id);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Commande validée avec succès");
+            response.put("statut", statut);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * PUT /api/commandes/{id}/statut - Mettre à jour le statut
+     */
+    @PutMapping("/{id}/statut")
+    public ResponseEntity<Commande> updateStatut(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> data) {
+        try {
+            StatutCommande statut = StatutCommande.valueOf(data.get("statut").toUpperCase());
+            Commande updated = commandeService.updateStatut(id, statut);
+            return ResponseEntity.ok(updated);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     /**
-     * PUT /api/commandes/{id} - Mettre à jour une commande
+     * GET /api/commandes/{id}/total - Calculer le total d'une commande
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<Commande> updateCommande(@PathVariable Long id, @RequestBody Commande commande) {
-        return commandeRepository.findById(id)
-                .map(existing -> {
-                    if (commande.getStatut() != null) {
-                        existing.setStatut(commande.getStatut());
-                    }
-                    if (commande.getDateCommande() != null) {
-                        existing.setDateCommande(commande.getDateCommande());
-                    }
-                    if (commande.getLivraison() != null) {
-                        existing.setLivraison(commande.getLivraison());
-                    }
-                    Commande updated = commandeRepository.save(existing);
-                    return ResponseEntity.ok(updated);
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * PATCH /api/commandes/{id}/status - Changer uniquement le statut
-     */
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<Commande> updateCommandeStatus(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> statusData) {
+    @GetMapping("/{id}/total")
+    public ResponseEntity<Map<String, Double>> calculerTotal(@PathVariable Long id) {
         try {
-            String newStatus = statusData.get("status");
-            StatutCommande statutEnum = StatutCommande.valueOf(newStatus.toUpperCase());
-
-            return commandeRepository.findById(id)
-                    .map(commande -> {
-                        commande.setStatut(statutEnum);
-                        Commande updated = commandeRepository.save(commande);
-                        return ResponseEntity.ok(updated);
-                    })
-                    .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            double total = commandeService.calculerTotal(id);
+            Map<String, Double> response = new HashMap<>();
+            response.put("total", total);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -149,29 +125,7 @@ public class CommandeController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCommande(@PathVariable Long id) {
-        return commandeRepository.findById(id)
-                .map(commande -> {
-                    commandeRepository.delete(commande);
-                    return ResponseEntity.noContent().<Void>build();
-                })
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    /**
-     * GET /api/commandes/stats - Statistiques des commandes
-     */
-    @GetMapping("/stats")
-    public ResponseEntity<Map<String, Object>> getCommandeStats() {
-        List<Commande> commandes = commandeRepository.findAll();
-
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", commandes.size());
-        stats.put("enAttente", commandes.stream().filter(c -> c.getStatut() == StatutCommande.EN_ATTENTE).count());
-        stats.put("enPreparation", commandes.stream().filter(c -> c.getStatut() == StatutCommande.EN_PREPARATION).count());
-        stats.put("expediee", commandes.stream().filter(c -> c.getStatut() == StatutCommande.EXPEDIEE).count());
-        stats.put("livree", commandes.stream().filter(c -> c.getStatut() == StatutCommande.LIVREE).count());
-        stats.put("annulee", commandes.stream().filter(c -> c.getStatut() == StatutCommande.ANNULEE).count());
-
-        return ResponseEntity.ok(stats);
+        commandeService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

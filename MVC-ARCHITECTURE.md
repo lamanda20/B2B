@@ -135,10 +135,81 @@ resources/
 
 ## Acces aux Pages
 
-- **Page d'accueil:** http://localhost:8080/
-- **Dashboard:** http://localhost:8080/dashboard
-- **API Health:** http://localhost:8080/api/public/health
-- **H2 Console (test):** http://localhost:8080/api/h2-console
+- **Page d'accueil:** http://localhost:8082/
+- **Dashboard:** http://localhost:8082/dashboard
+- **API Health:** http://localhost:8082/api/public/health
+- **H2 Console (test):** http://localhost:8082/api/h2-console
+
+## Accès API pour le frontend JavaFX
+
+Important: le backend Spring Boot est configuré pour écouter par défaut sur le port 8082 (voir `src/main/resources/application.properties`). Si ton client JavaFX utilisait `http://localhost:8080`, il recevra la réponse d'un autre service (ex: Oracle) et potentiellement du HTML au lieu du JSON attendu.
+
+Voici deux snippets Java prêts à coller dans ton code JavaFX (ou tout client Java) : l'un avec `HttpClient` (Java 11+) et l'autre avec `HttpURLConnection`. Les deux vérifient le Content-Type et évitent de parser du HTML comme du JSON.
+
+-- HttpClient (Java 11+)
+
+```java
+import java.net.http.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import com.fasterxml.jackson.databind.*;
+
+HttpClient client = HttpClient.newHttpClient();
+String villeEncoded = URLEncoder.encode(ville, StandardCharsets.UTF_8);
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("http://localhost:8082/api/livraisons/calculate-frais?ville=" + villeEncoded))
+    .GET()
+    .header("Accept", "application/json")
+    .build();
+
+HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+String body = response.body();
+String contentType = response.headers().firstValue("Content-Type").orElse("");
+
+if (contentType.contains("application/json") || body.trim().startsWith("{")) {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode root = mapper.readTree(body);
+    double frais = root.path("frais").asDouble();
+    String villeResp = root.path("ville").asText();
+    // utiliser frais et villeResp dans l'UI
+} else {
+    // Réponse inattendue (HTML ou autre) — afficher/logguer le corps pour debug
+    System.err.println("Réponse inattendue (content-type=" + contentType + "):\n" + body);
+    // afficher une erreur utilisateur dans l'UI JavaFX
+}
+```
+
+-- HttpURLConnection (compatible Java 8)
+
+```java
+import java.net.*;
+import java.io.*;
+
+URL url = new URL("http://localhost:8082/api/livraisons/calculate-frais?ville=" + URLEncoder.encode(ville, "UTF-8"));
+HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+conn.setRequestMethod("GET");
+conn.setRequestProperty("Accept", "application/json");
+int status = conn.getResponseCode();
+InputStream is = (status >= 200 && status < 400) ? conn.getInputStream() : conn.getErrorStream();
+String contentType = conn.getHeaderField("Content-Type");
+String body;
+try (BufferedReader in = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+    StringBuilder sb = new StringBuilder();
+    String line;
+    while ((line = in.readLine()) != null) sb.append(line).append('\n');
+    body = sb.toString();
+}
+if (contentType != null && contentType.contains("application/json") || body.trim().startsWith("{")) {
+    // parser JSON (ex: avec Jackson ou org.json)
+} else {
+    // Réponse inattendue : log + afficher message à l'utilisateur
+    System.err.println("Réponse inattendue (" + contentType + "):\n" + body);
+}
+```
+
+Notes pratiques :
+- Si tu veux conserver `http://localhost:8080` comme adresse backend, il faudra libérer le port 8080 (arrêter le service Oracle qui écoute sur ce port) puis modifier `application.properties` (ou supprimer `server.port`) et redémarrer l'application Spring Boot.
+- Pour éviter toute confusion, préfère utiliser `http://localhost:8082/api/...` dans ton frontend ou harmoniser les docs.
 
 ## Configuration Thymeleaf
 

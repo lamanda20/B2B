@@ -1,181 +1,133 @@
 -- ===============================
--- DONNÉES DE TEST POUR B2B APPLICATION
+-- INSERT DATA (adapté aux tables : companies, categories, produits, commandes, livraisons,
+-- lignes_commande, lignes_panier, paniers, avis, payments)
+-- Usage: mysql -u root -p b2b_db < database/insert-data.sql
+-- Exécutez APRÈS avoir créé la base et les tables
 -- ===============================
--- Exécutez ce script APRÈS avoir créé les tables
 
 USE b2b_db;
 
--- ===============================
--- 1. UTILISATEURS
--- ===============================
-INSERT INTO users (nom, email, telephone, adresse, ville) VALUES
-('Mohammed Alami', 'mohammed.alami@example.com', '0612345678', '123 Rue Hassan II', 'Casablanca'),
-('Fatima Bennani', 'fatima.bennani@example.com', '0623456789', '456 Avenue Mohammed V', 'Rabat'),
-('Youssef Tazi', 'youssef.tazi@example.com', '0634567890', '789 Boulevard Zerktouni', 'Marrakech'),
-('Amina Idrissi', 'amina.idrissi@example.com', '0645678901', '321 Rue de Fès', 'Fès'),
-('Hassan Mouhib', 'hassan.mouhib@example.com', '0656789012', '654 Avenue Ibn Sina', 'Tanger');
+-- Désactiver temporairement les vérifications de clés étrangères pour permettre l'insertion ordonnée
+SET FOREIGN_KEY_CHECKS=0;
 
--- ===============================
--- 2. CLIENTS
--- ===============================
-INSERT INTO clients (nom, email, telephone, adresse_par_defaut, ville_par_defaut) VALUES
-('Karim Benali', 'karim.benali@example.com', '0667890123', '111 Rue Anfa', 'Casablanca'),
-('Salma Chaoui', 'salma.chaoui@example.com', '0678901234', '222 Avenue Agdal', 'Rabat'),
-('Omar Fassi', 'omar.fassi@example.com', '0689012345', '333 Bd Allal Ben Abdellah', 'Fès');
+START TRANSACTION;
 
--- ===============================
--- 3. PRODUITS
--- ===============================
-INSERT INTO produits (nom, description, prix, stock_disponible, categorie) VALUES
-('Ordinateur Portable HP', 'Ordinateur portable 15 pouces, 8GB RAM, 256GB SSD', 7500.00, 50, 'INFORMATIQUE'),
-('Souris Sans Fil Logitech', 'Souris ergonomique sans fil 2.4GHz', 250.00, 200, 'ACCESSOIRES'),
-('Clavier Mécanique RGB', 'Clavier mécanique gaming avec rétroéclairage RGB', 450.00, 100, 'ACCESSOIRES'),
-('Écran 24 pouces Samsung', 'Écran Full HD IPS 24 pouces', 1500.00, 75, 'INFORMATIQUE'),
-('Casque Audio Sony WH-1000XM4', 'Casque audio avec réduction de bruit active', 2850.00, 60, 'AUDIO'),
-('Webcam Logitech C920', 'Webcam Full HD 1080p avec micro intégré', 650.00, 120, 'ACCESSOIRES'),
-('Disque Dur Externe 1TB', 'Disque dur externe USB 3.0 portable', 550.00, 150, 'STOCKAGE'),
-('Imprimante HP LaserJet', 'Imprimante laser noir et blanc A4', 1200.00, 40, 'PERIPHERIQUES'),
-('Tablette Samsung Galaxy', 'Tablette 10 pouces, 64GB, WiFi', 2200.00, 80, 'INFORMATIQUE'),
-('Chargeur USB-C 65W', 'Chargeur rapide USB-C 65W compatible multi-appareils', 180.00, 250, 'ACCESSOIRES');
+-- -------------------------------
+-- 1) COMPANIES
+-- -------------------------------
+-- Table companies columns: id, address, city, created_at, email, enabled, full_name, must_change_password, name, password, phone, role, website
+INSERT INTO companies (name, address, city, created_at, email, enabled, full_name, must_change_password, password, phone, role, website) VALUES
+('B2B System', 'Siège Social - 1 Rue Principale', 'Casablanca', NOW(), 'contact@b2b.local', TRUE, 'B2B Admin', FALSE, '$2a$10$N9qo8uLOickgx2ZMRZoMye1J7qBKjOYhL4bQa.yt7tq1lJhOzPiWy', '0522000000', 1, 'https://www.b2b.local'),
+('Tech Supply', '12 Rue Tech', 'Rabat', NOW(), 'contact@tech-supply.local', TRUE, 'Tech Manager', FALSE, '$2a$10$N9qo8uLOickgx2ZMRZoMye1J7qBKjOYhL4bQa.yt7tq1lJhOzPiWy', '0522111111', 1, 'https://www.tech-supply.local');
 
--- ===============================
--- 4. LIVRAISONS
--- ===============================
-INSERT INTO livraisons (adresse, ville, telephone, transporteur, frais_livraison, date_envoi, date_estimee, user_id) VALUES
-('123 Rue Hassan II', 'Casablanca', '0612345678', 'Maroc Poste', 20.00, '2024-11-01', '2024-11-05', 1),
-('456 Avenue Mohammed V', 'Rabat', '0623456789', 'Amana Express', 35.00, '2024-11-03', '2024-11-07', 2),
-('789 Boulevard Zerktouni', 'Marrakech', '0634567890', 'CTM', 35.00, '2024-11-05', '2024-11-09', 3),
-('321 Rue de Fès', 'Fès', '0645678901', 'Maroc Poste', 50.00, '2024-11-06', '2024-11-10', 4),
-('654 Avenue Ibn Sina', 'Tanger', '0656789012', 'Amana Express', 35.00, '2024-11-08', '2024-11-12', 5);
+-- -------------------------------
+-- 2) CATEGORIES
+-- -------------------------------
+-- Table `categories` attend : id_cat (auto), name, description
+INSERT INTO categories (id_cat, name, description) VALUES
+(8, 'INFORMATIQUE', 'Ordinateurs, écrans et accessoires informatiques'),
+(9, 'ACCESSOIRES', 'Souris, claviers, webcams, chargeurs'),
+(10, 'AUDIO', 'Casques et enceintes'),
+(11, 'STOCKAGE', 'Disques durs externes et SSD');
 
--- ===============================
--- 5. COMMANDES
--- ===============================
-INSERT INTO commandes (ref_commande, date_commande, statut, user_id, livraison_id) VALUES
-('CMD-2024-001', '2024-11-01', 'LIVREE', 1, 1),
-('CMD-2024-002', '2024-11-03', 'EN_COURS', 2, 2),
-('CMD-2024-003', '2024-11-05', 'EN_PREPARATION', 3, 3),
-('CMD-2024-004', '2024-11-06', 'EXPEDIEE', 4, 4),
-('CMD-2024-005', '2024-11-08', 'EN_ATTENTE', 5, 5);
+-- -------------------------------
+-- 3) PRODUITS
+-- Colonnes attendues (par l'entité Produit) : name, description, price, stock, company_id, categorie_id
+-- -------------------------------
+INSERT INTO produits (name, description, price, stock, company_id, categorie_id) VALUES
+('Ordinateur Portable HP', 'Portable 15" - 8GB RAM - 256GB SSD', 7500.00, 50, 1, 1),
+('Souris Sans Fil Logitech', 'Souris ergonomique sans fil 2.4GHz', 250.00, 200, 2, 2),
+('Clavier Mécanique RGB', 'Clavier mécanique gaming RGB', 450.00, 100, 2, 2),
+('Écran 24" Samsung', 'Écran Full HD IPS 24 pouces', 1500.00, 75, 1, 1),
+('Casque Audio Sony WH-1000XM4', 'Casque sans fil ANC', 2850.00, 60, 1, 3),
+('Webcam Logitech C920', 'Webcam Full HD 1080p', 650.00, 120, 2, 2),
+('Disque Dur Externe 1TB', 'HDD portable USB 3.0', 550.00, 150, 2, 4),
+('Imprimante HP LaserJet', 'Imprimante laser noir et blanc A4', 1200.00, 40, 1, 2),
+('Tablette Samsung Galaxy', 'Tablette 10" 64GB', 2200.00, 80, 1, 1),
+('Chargeur USB-C 65W', 'Chargeur rapide USB-C 65W', 180.00, 250, 2, 2);
 
--- ===============================
--- 6. LIGNES DE COMMANDE
--- ===============================
-INSERT INTO lignes_commande (commande_id, produit_id, quantite, prix_unitaire) VALUES
--- Commande 1
-(1, 1, 1, 7500.00),
-(1, 2, 2, 250.00),
--- Commande 2
-(2, 4, 1, 1500.00),
-(2, 3, 1, 450.00),
-(2, 6, 1, 650.00),
--- Commande 3
-(3, 1, 1, 7500.00),
--- Commande 4
-(4, 5, 1, 2850.00),
-(4, 7, 1, 550.00),
--- Commande 5
-(5, 9, 1, 2200.00),
-(5, 10, 3, 180.00);
+-- -------------------------------
+-- 4) LIVRAISONS
+-- Colonnes (conformes à l'entité Livraison) : adresse, ville, code_postal (optionnel), telephone, transporteur, frais_livraison, date_envoi, date_estimee
+-- NOTE: certaines bases utilisent snake_case ou camelCase; ici on utilise snake_case compatible avec la plupart des schémas SQL.
+-- -------------------------------
+INSERT INTO livraisons (adresse, ville, telephone, transporteur, frais_livraison, date_envoi, date_estimee) VALUES
+('123 Rue Hassan II', 'Casablanca', '0612345678', 'Maroc Poste', 20.00, '2025-11-01', '2025-11-05'),
+('456 Avenue Mohammed V', 'Rabat', '0623456789', 'Amana Express', 35.00, '2025-11-03', '2025-11-07'),
+('789 Boulevard Zerktouni', 'Marrakech', '0634567890', 'CTM', 35.00, '2025-11-05', '2025-11-09');
 
--- ===============================
--- 7. PANIERS
--- ===============================
-INSERT INTO paniers (client_id, date_creation) VALUES
-(1, '2024-11-09'),
-(2, '2024-11-10'),
-(3, '2024-11-10');
+-- -------------------------------
+-- 5) COMMANDES
+-- Colonnes utilisées : ref_commande, date_commande, statut, company_id, livraison_id
+-- (NB: la colonne `company_id` est utilisée ici parce que l'entité Commande référence Company)
+-- -------------------------------
+INSERT INTO commandes (ref_commande, date_commande, statut, company_id, livraison_id) VALUES
+('CMD-2025-001', '2025-11-01', 'LIVREE', 1, 1),
+('CMD-2025-002', '2025-11-03', 'EN_COURS', 2, 2),
+('CMD-2025-003', '2025-11-05', 'EN_PREPARATION', 1, 3);
 
--- ===============================
--- 8. LIGNES DE PANIER
--- ===============================
-INSERT INTO lignes_panier (panier_id, produit_id, quantite, prix_unitaire) VALUES
--- Panier du client 1
-(1, 8, 1, 1200.00),
-(1, 2, 1, 250.00),
--- Panier du client 2
-(2, 1, 1, 7500.00),
-(2, 4, 1, 1500.00),
--- Panier du client 3
-(3, 5, 1, 2850.00);
+-- -------------------------------
+-- 6) LIGNES DE COMMANDE
+-- Colonnes : commande_id, produit_id, quantite, prix_unitaire, seller_line_prix (optionnel)
+-- -------------------------------
+INSERT INTO lignes_commande (commande_id, produit_id, quantite, prix_unitaire, seller_line_prix) VALUES
+(1, 1, 1, 7500.00, NULL),
+(1, 2, 2, 250.00, NULL),
+(2, 4, 1, 1500.00, NULL),
+(2, 3, 1, 450.00, NULL),
+(2, 6, 1, 650.00, NULL),
+(3, 1, 1, 7500.00, NULL);
 
--- ===============================
--- 9. PAYMENTS (PAIEMENTS)
--- ===============================
-INSERT INTO payments (inv_id, client_name, product, date, amount, status) VALUES
-('INV-2024-001', 'Mohammed Alami', 'Ordinateur Portable HP + Souris Sans Fil', '2024-11-01', 8000.00, 'PAYE'),
-('INV-2024-002', 'Fatima Bennani', 'Écran Samsung + Clavier + Webcam', '2024-11-03', 2600.00, 'PAYE'),
-('INV-2024-003', 'Youssef Tazi', 'Ordinateur Portable HP', '2024-11-05', 7500.00, 'EN_ATTENTE'),
-('INV-2024-004', 'Amina Idrissi', 'Casque Sony + Disque Dur', '2024-11-06', 3400.00, 'PAYE'),
-('INV-2024-005', 'Hassan Mouhib', 'Tablette Samsung + Chargeurs', '2024-11-08', 2740.00, 'EN_ATTENTE'),
-('INV-2024-006', 'Karim Benali', 'Imprimante HP LaserJet', '2024-11-09', 1200.00, 'PAYE'),
-('INV-2024-007', 'Salma Chaoui', 'Ordinateur + Écran Samsung', '2024-11-10', 9000.00, 'ECHOUE'),
-('INV-2024-008', 'Omar Fassi', 'Casque Audio Sony', '2024-11-10', 2850.00, 'PAYE');
+-- -------------------------------
+-- 7) PANIERS
+-- Colonnes : company_id (référence à Company), date_creation
+-- -------------------------------
+INSERT INTO paniers (company_id, date_creation) VALUES
+(1, '2025-11-09'),
+(2, '2025-11-10');
 
--- ===============================
--- CONFIRMATION DES INSERTIONS
--- ===============================
-SELECT 'Données insérées avec succès!' AS Message;
+-- -------------------------------
+-- 8) LIGNES DE PANIER
+-- Colonnes : panier_id, produit_id, quantite
+-- -------------------------------
+INSERT INTO lignes_panier (panier_id, produit_id, quantite) VALUES
+(1, 8, 1),
+(1, 2, 1),
+(2, 1, 1),
+(2, 4, 1);
 
--- Afficher un résumé des données
-SELECT 'Users' AS Table_Name, COUNT(*) AS Count FROM users
-UNION ALL
-SELECT 'Clients', COUNT(*) FROM clients
-UNION ALL
-SELECT 'Produits', COUNT(*) FROM produits
-UNION ALL
-SELECT 'Livraisons', COUNT(*) FROM livraisons
-UNION ALL
-SELECT 'Commandes', COUNT(*) FROM commandes
-UNION ALL
-SELECT 'Lignes Commande', COUNT(*) FROM lignes_commande
-UNION ALL
-SELECT 'Paniers', COUNT(*) FROM paniers
-UNION ALL
-SELECT 'Lignes Panier', COUNT(*) FROM lignes_panier
-UNION ALL
-SELECT 'Payments', COUNT(*) FROM payments;
+-- -------------------------------
+-- 9) AVIS
+-- Colonnes : feedback (TEXT), note (INT), date_creation, company_id (optionnel), produit_id, etat
+-- -------------------------------
+INSERT INTO avis (feedback, note, date_creation, company_id, produit_id, etat) VALUES
+('Très bon produit, livraison rapide.', 5, '2025-11-02', 1, 1, 'APPROUVE'),
+('Satisfaisant, mais le câble est arrivé abîmé.', 3, '2025-11-04', 2, 6, 'EN_ATTENTE');
 
--- ===============================
--- EXEMPLES DE REQUÊTES
--- ===============================
+-- -------------------------------
+-- 10) PAYMENTS
+-- Colonnes (d'après Payment.java) : moyen, produit (description), company_id, date, amount, status, commande_id
+-- -------------------------------
+INSERT INTO payments (moyen, produit, company_id, date, amount, status, commande_id) VALUES
+('Carte', 'Ordinateur Portable HP + Souris', 1, '2025-11-01', 8000.00, 'PAYE', 1),
+('Virement', 'Écran + Clavier', 2, '2025-11-03', 1850.00, 'PAYE', 2);
 
--- Voir toutes les commandes avec utilisateur
-SELECT
-    c.ref_commande,
-    c.date_commande,
-    c.statut,
-    u.nom AS client_nom,
-    u.email AS client_email
-FROM commandes c
-JOIN users u ON c.user_id = u.id
-ORDER BY c.date_commande DESC;
+COMMIT;
 
--- Voir les détails d'une commande avec ses lignes
-SELECT
-    c.ref_commande,
-    p.nom AS produit,
-    lc.quantite,
-    lc.prix_unitaire,
-    (lc.quantite * lc.prix_unitaire) AS sous_total
-FROM commandes c
-JOIN lignes_commande lc ON c.id = lc.commande_id
-JOIN produits p ON lc.produit_id = p.id
-WHERE c.id = 1;
+-- Réactiver les vérifications de clés étrangères
+SET FOREIGN_KEY_CHECKS=1;
 
--- Voir les livraisons en cours
-SELECT
-    l.id_livraison,
-    l.adresse,
-    l.ville,
-    l.transporteur,
-    l.date_envoi,
-    l.date_estimee,
-    u.nom AS client_nom,
-    c.ref_commande
-FROM livraisons l
-JOIN users u ON l.user_id = u.id
-LEFT JOIN commandes c ON c.livraison_id = l.id_livraison
-WHERE l.date_estimee >= CURDATE()
-ORDER BY l.date_estimee;
+-- Résumés (facultatif) :
+SELECT 'SUMMARY' AS info;
+SELECT 'companies' AS table_name, COUNT(*) AS cnt FROM companies
+UNION ALL SELECT 'categories', COUNT(*) FROM categories
+UNION ALL SELECT 'produits', COUNT(*) FROM produits
+UNION ALL SELECT 'livraisons', COUNT(*) FROM livraisons
+UNION ALL SELECT 'commandes', COUNT(*) FROM commandes
+UNION ALL SELECT 'lignes_commande', COUNT(*) FROM lignes_commande
+UNION ALL SELECT 'paniers', COUNT(*) FROM paniers
+UNION ALL SELECT 'lignes_panier', COUNT(*) FROM lignes_panier
+UNION ALL SELECT 'avis', COUNT(*) FROM avis
+UNION ALL SELECT 'payments', COUNT(*) FROM payments;
 
+-- Fin du script
