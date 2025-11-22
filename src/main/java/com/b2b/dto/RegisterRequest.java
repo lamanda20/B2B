@@ -8,7 +8,6 @@ public class RegisterRequest {
     private String address;
     private String city;
     private String phone;
-    private String website;
     private String ice;
 
 
@@ -32,9 +31,6 @@ public class RegisterRequest {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-
-    public String getWebsite() { return website; }
-    public void setWebsite(String website) { this.website = website; }
 
     public String getIce() { return ice; }
     public void setIce(String ice) { this.ice = ice; }

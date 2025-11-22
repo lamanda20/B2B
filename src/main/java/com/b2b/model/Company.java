@@ -25,8 +25,6 @@ public class Company {
     @Column(length = 40)
     private String phone;
 
-    @Column(length = 255)
-    private String website;
 
     // ↓↓↓ Ajouts pour l’authentification ↓↓↓
     @Column(nullable = false, length = 180)
@@ -69,8 +67,6 @@ public class Company {
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
-    public String getWebsite() { return website; }
-    public void setWebsite(String website) { this.website = website; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

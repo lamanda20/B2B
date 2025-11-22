@@ -80,7 +80,6 @@ public class AuthController {
         c.setAddress(req.getAddress());
         c.setCity(req.getCity());
         c.setPhone(req.getPhone());
-        c.setWebsite(req.getWebsite());
         c.setEnabled(true); // ou false si tu veux validation par admin
 
         companies.save(c);
