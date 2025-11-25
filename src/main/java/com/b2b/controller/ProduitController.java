@@ -1,76 +1,47 @@
 package com.b2b.controller;
 
-import com.b2b.model.Produit;
+import com.b2b.dto.*;
 import com.b2b.service.ProduitService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(origins = "*")
 @RestController
-@RequestMapping("/api/produits")
-@CrossOrigin(originPatterns = "*", allowCredentials = "true")
+@RequestMapping("/api/products")
 public class ProduitController {
 
-    private final ProduitService produitService;
+    private final ProduitService service;
+    public ProduitController(ProduitService service) { this.service = service; }
 
-    @Autowired
-    public ProduitController(ProduitService produitService) {
-        this.produitService = produitService;
-    }
 
     @GetMapping
-    public ResponseEntity<List<Produit>> findAll() {
-        return ResponseEntity.ok(produitService.findAll());
+    public List<ProduitDTO> list(@RequestParam(required = false) String q) {
+        return service.findAll(q);
     }
+
 
     @GetMapping("/{id}")
-    public ResponseEntity<Produit> findById(@PathVariable Long id) {
-        return produitService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
+    public ProduitDTO get(@PathVariable Long id) { return service.findById(id); }
+
 
     @PostMapping
-    public ResponseEntity<Produit> create(@RequestBody Produit produit) {
-        Produit created = produitService.create(produit);
-        return ResponseEntity.ok(created);
+    public ResponseEntity<ProduitDTO> create(@Valid @RequestBody ProduitCreateDTO in) {
+        return ResponseEntity.ok(service.create(in));
     }
 
+
     @PutMapping("/{id}")
-    public ResponseEntity<Produit> update(@PathVariable Long id, @RequestBody Produit produit) {
-        try {
-            Produit updated = produitService.update(id, produit);
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ProduitDTO update(@PathVariable Long id, @Valid @RequestBody ProduitUpdateDTO in) {
+        return service.update(id, in);
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        produitService.delete(id);
+        service.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/company/{companyId}")
-    public ResponseEntity<List<Produit>> findByCompany(@PathVariable Long companyId) {
-        return ResponseEntity.ok(produitService.findByCompany(companyId));
-    }
-
-    @GetMapping("/categorie/{categorieId}")
-    public ResponseEntity<List<Produit>> findByCategorie(@PathVariable Integer categorieId) {
-        return ResponseEntity.ok(produitService.findByCategorie(categorieId));
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<Produit>> searchByName(@RequestParam String name) {
-        return ResponseEntity.ok(produitService.searchByName(name));
-    }
-
-    @GetMapping("/in-stock")
-    public ResponseEntity<List<Produit>> findInStock() {
-        return ResponseEntity.ok(produitService.findInStock());
     }
 }
