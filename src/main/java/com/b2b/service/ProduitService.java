@@ -1,5 +1,6 @@
 package com.b2b.service;
 
+import com.b2b.dto.ProduitDTO;
 import com.b2b.model.Filter;
 import com.b2b.model.Produit;
 import org.springframework.stereotype.Service;
@@ -19,4 +20,4 @@ public class ProduitService {
     public List<Produit> search(Filter f) {
         return filterProduct.searchCustom(f);
     }
-}
+
