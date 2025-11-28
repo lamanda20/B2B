@@ -1,8 +1,9 @@
 package com.b2b.controller;
 
-import com.b2b.model.Categorie;
+import com.b2b.dto.CategoryDto;
+import com.b2b.mapper.DtoMapper;
 import com.b2b.service.CategorieService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,49 +12,47 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/categories")
 @CrossOrigin(originPatterns = "*", allowCredentials = "true")
+@RequiredArgsConstructor
 public class CategorieController {
 
     private final CategorieService categorieService;
 
-    @Autowired
-    public CategorieController(CategorieService categorieService) {
-        this.categorieService = categorieService;
-    }
-
     @GetMapping
-    public ResponseEntity<List<Categorie>> findAll() {
-        return ResponseEntity.ok(categorieService.findAll());
+    public ResponseEntity<List<CategoryDto>> findAll() {
+        List<CategoryDto> dtos = categorieService.findAll()
+                .stream()
+                .map(DtoMapper::toDto)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Categorie> findById(@PathVariable Integer id) {
+    public ResponseEntity<CategoryDto> findById(@PathVariable Integer id) {
         return categorieService.findById(id)
+                .map(DtoMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/name/{name}")
-    public ResponseEntity<Categorie> findByName(@PathVariable String name) {
+    public ResponseEntity<CategoryDto> findByName(@PathVariable String name) {
         return categorieService.findByName(name)
+                .map(DtoMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Categorie> create(@RequestBody Categorie categorie) {
-        try {
-            Categorie created = categorieService.create(categorie);
-            return ResponseEntity.ok(created);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<CategoryDto> create(@RequestBody CategoryDto dto) {
+        var entity = categorieService.create(dto);
+        return ResponseEntity.ok(DtoMapper.toDto(entity));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Categorie> update(@PathVariable Integer id, @RequestBody Categorie categorie) {
+    public ResponseEntity<CategoryDto> update(@PathVariable Integer id, @RequestBody CategoryDto dto) {
         try {
-            Categorie updated = categorieService.update(id, categorie);
-            return ResponseEntity.ok(updated);
+            var updated = categorieService.update(id, dto);
+            return ResponseEntity.ok(DtoMapper.toDto(updated));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -64,4 +63,11 @@ public class CategorieController {
         categorieService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{id}/filters")
+    public ResponseEntity<?> getFilters(@PathVariable Integer id) {
+        var filters = categorieService.getFiltersForCategory(id);
+        return ResponseEntity.ok(filters);
+    }
+
 }

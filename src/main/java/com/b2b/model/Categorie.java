@@ -2,7 +2,9 @@ package com.b2b.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -10,6 +12,8 @@ import java.util.List;
 @Table(name = "categories")
 @Data
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@AllArgsConstructor
+@NoArgsConstructor
 public class Categorie {
 
     @Id
@@ -23,7 +27,4 @@ public class Categorie {
     @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "categorie")
-    @JsonIgnoreProperties({"categorie", "company", "lignesCommande", "lignesPanier"})
-    private List<Produit> produits;
 }

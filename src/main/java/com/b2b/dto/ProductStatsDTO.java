@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class ProductStatsDTO {
-    private Long productId;
+    private long productId;
     private String productName;
     private double total;
 }

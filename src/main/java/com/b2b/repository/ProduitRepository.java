@@ -12,4 +12,5 @@ public interface ProduitRepository extends JpaRepository<Produit, Long> {
     List<Produit> findByCategorieIdCat(Integer categorieId);
     List<Produit> findByNameContainingIgnoreCase(String name);
     List<Produit> findByStockGreaterThan(Integer stock);
+    List<Produit> findByCategorie_IdCat(int categoryId);
 }
