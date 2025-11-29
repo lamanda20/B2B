@@ -1,30 +1,52 @@
 package com.b2b.model;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "commandes")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Slf4j
 public class Commande {
-    private int id ;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String refCommande;
-    private Client client ;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LigneCommande> lignes = new ArrayList<>();
-    private LocalDate dateCommande ;
+
+    private LocalDate dateCommande;
+
+    @Enumerated(EnumType.STRING)
     private StatutCommande statut = StatutCommande.EN_COURS;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "livraison_id")
+    private Livraison livraison;
 
     public void ajouterligne(LigneCommande lignecmd){
+        if (lignecmd == null) return;
         lignecmd.setCommande(this);
         lignes.add(lignecmd);
     }
+
     public double calculerTotal(){
         double total= 0.0;
         for ( LigneCommande lcm : lignes){
@@ -36,19 +58,21 @@ public class Commande {
     public StatutCommande suivreCommande(){
         return this.getStatut();
     }
+
     public void afficherCommande(){
-        System.out.println("Commande numéro :"+id+" effectué le :" + dateCommande);
-        if ( client != null){
-            System.out.println("Client :" +  statut );
+        log.info("Commande numéro :{} effectué le :{}", id, dateCommande);
+        if ( company != null){
+            log.info("Company : {}", company.getName());
         }
-        System.out.println("Statut :" +  statut );
-        System.out.println("-----------------------------------------------");
+        log.info("Statut : {}", statut);
+        log.info("-----------------------------------------------");
         for (LigneCommande lc : lignes){
-            System.out.println("Produit :" + lc.getProduit().getNom()
-            + "quantité: " +lc.getQuantite()+ " , prix unitaire : " + lc.getPrixUnitaire() + ", sous-total " + lc.getSousTotal());
+            log.info("Produit :{} quantité: {} , prix unitaire : {} , sous-total {}",
+                    lc.getProduit() != null ? lc.getProduit().getName() : "N/A",
+                    lc.getQuantite(), lc.getPrixUnitaire(), lc.getSousTotal());
 
         }
-        System.out.println("total " + calculerTotal() + " DH" );
+        log.info("total {} DH", calculerTotal());
     }
 
 }

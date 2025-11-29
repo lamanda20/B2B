@@ -5,17 +5,20 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 @EqualsAndHashCode
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Slf4j
 public class Panier {
     private int id ;
-    private Client client;
+    private Company company;
     private List<LignePanier> lignes = new ArrayList<>() ;
     private LocalDate dateCreation = LocalDate.now() ;
     private double total;
@@ -62,18 +65,18 @@ public class Panier {
         return total ;
     }
     public void afficherContenu(){
-        System.out.println("Votre panier : ");
+        log.info("Votre panier : ");
         for (LignePanier lp : lignes){
-            System.out.println(" Produit : "+ lp.getProduit() + " quantité :" + lp.getQuantite() +" sous-total: "+ lp.getSousTotal());
+            log.info(" Produit : {} quantité : {} sous-total: {}", lp.getProduit(), lp.getQuantite(), lp.getSousTotal());
         }
-        System.out.println("total du panier : "+total +"DH");
+        log.info("total du panier : {} DH", total);
     }
 
     public Commande validerCommande(){
 
         // verifier si le panier est vide
         if (lignes.isEmpty()){
-            System.out.println("Le panier est vide, impossible de valider la commande. ");
+            log.warn("Le panier est vide, impossible de valider la commande.");
             return null;
         }
         List<LigneCommande> lc = new ArrayList<>();
@@ -81,22 +84,32 @@ public class Panier {
         commande.setLignes(lc);
         commande.setDateCommande(LocalDate.now());
         commande.setStatut(StatutCommande.EN_COURS);
-        commande.setClient(client);
 
-        // geneeration de reference lisible
-        String ref= "CMD-"+LocalDate.now().getYear()+"-"+(int)(Math.random()* 10000);
+        // generation de reference lisible
+        int rand = ThreadLocalRandom.current().nextInt(0, 10000);
+        String ref= String.format("CMD-%d-%04d", LocalDate.now().getYear(), rand);
+        commande.setRefCommande(ref);
+
+        // associer la company si présente
+        commande.setCompany(company);
+
         for (LignePanier lp : lignes){
             LigneCommande lcmd = new LigneCommande();
             lcmd.setCommande(commande);
             lcmd.setProduit(lp.getProduit());
             lcmd.setQuantite(lp.getQuantite());
-            lcmd.setPrixUnitaire(lp.getProduit().getPrix());
+            // Produit.price est un BigDecimal -> convertir en double
+            if (lp.getProduit() != null && lp.getProduit().getPrice() != null) {
+                lcmd.setPrixUnitaire(lp.getProduit().getPrice().doubleValue());
+            } else {
+                lcmd.setPrixUnitaire(0.0);
+            }
             lc.add(lcmd);
 
         }
         viderPanier();
-        System.out.println("commande validé" +commande.getRefCommande()+" Date "+commande.getDateCommande());
-        System.out.println("Total :"+commande.calculerTotal()+"DH");
+        log.info("commande validée {} Date {}", commande.getRefCommande(), commande.getDateCommande());
+        log.info("Total : {} DH", commande.calculerTotal());
         return commande ;
     }
 

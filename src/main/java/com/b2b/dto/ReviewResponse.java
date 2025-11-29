@@ -1,4 +1,4 @@
-package com.b2b.avis.dto;
+package com.b2b.dto;
 
 import lombok.Data;
 

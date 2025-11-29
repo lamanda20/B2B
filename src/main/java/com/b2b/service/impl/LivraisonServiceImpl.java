@@ -1,6 +1,5 @@
 package com.b2b.service.impl;
 
-import com.b2b.model.Company;
 import com.b2b.model.Commande;
 import com.b2b.model.Livraison;
 import com.b2b.model.StatutCommande;
@@ -34,9 +33,6 @@ public class LivraisonServiceImpl implements LivraisonService {
             throw new IllegalArgumentException("La commande doit être associée à une company.");
         }
 
-        // Récupérer les infos de la company pour créer la livraison
-        var company = commande.getCompany();
-
         Livraison livraison = new Livraison();
         livraison.setAdresse("Adresse à définir");
         livraison.setVille("Casablanca");
@@ -68,8 +64,7 @@ public class LivraisonServiceImpl implements LivraisonService {
         Livraison livraison = commande.getLivraison();
         if (livraison != null) {
             switch (nouveauStatut) {
-                case EXPEDIEE:
-                case EN_COURS:
+                case EXPEDIEE, EN_COURS:
                     livraison.setDateEstimee(LocalDate.now().plusDays(3));
                     break;
                 case LIVREE:
@@ -83,8 +78,6 @@ public class LivraisonServiceImpl implements LivraisonService {
             livraisonRepository.save(livraison);
         }
 
-        Commande commandeSauvegardee = commandeRepository.save(commande);
-
-        return commandeSauvegardee;
+        return commandeRepository.save(commande);
     }
 }

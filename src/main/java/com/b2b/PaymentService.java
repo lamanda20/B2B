@@ -1,4 +1,4 @@
-package com.b2b.service;
+package com.b2b;
 
 import com.b2b.dto.PaymentDTO;
 import com.b2b.model.Payment;

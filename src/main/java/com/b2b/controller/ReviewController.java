@@ -1,8 +1,8 @@
 package com.b2b.controller;
 
-import com.b2b.avis.dto.ReviewRequest;
-import com.b2b.avis.model.Review;
-import com.b2b.avis.service.ReviewService;
+import com.b2b.dto.ReviewRequest;
+import com.b2b.model.Review;
+import com.b2b.service.ReviewService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

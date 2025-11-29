@@ -1,7 +1,7 @@
-package com.b2b.avis.service;
+package com.b2b.service;
 
-import com.b2b.avis.dto.ReviewRequest;
-import com.b2b.avis.model.Review;
+import com.b2b.dto.ReviewRequest;
+import com.b2b.model.Review;
 
 import java.util.List;
 import java.util.Optional;

@@ -3,11 +3,13 @@ package com.b2b.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Entity
 @Table(name = "lignes_commande")
 @Data
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Slf4j
 public class LigneCommande {
 
     @Id
@@ -34,10 +36,10 @@ public class LigneCommande {
 
     // Méthode pour afficher la ligne
     public void afficherLigne() {
-        System.out.println("Ligne de commande: " +
-            (produit != null ? produit.getName() : "N/A") +
-            " - Quantité: " + quantite +
-            " - Prix unitaire: " + prixUnitaire +
-            " - Sous-total: " + getSousTotal());
+        log.info("Ligne de commande: {} - Quantité: {} - Prix unitaire: {} - Sous-total: {}",
+                (produit != null ? produit.getName() : "N/A"),
+                quantite,
+                prixUnitaire,
+                getSousTotal());
     }
 }

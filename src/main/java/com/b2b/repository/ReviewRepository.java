@@ -1,6 +1,6 @@
-package com.b2b.avis.repository;
+package com.b2b.repository;
 
-import com.b2b.avis.model.Review;
+import com.b2b.model.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 

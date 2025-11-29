@@ -1,4 +1,4 @@
-package com.b2b.avis.model;
+package com.b2b.model;
 
 import jakarta.persistence.*;
 import lombok.*;

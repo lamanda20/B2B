@@ -1,9 +1,9 @@
-package com.b2b.avis.service.impl;
+package com.b2b.service.impl;
 
-import com.b2b.avis.dto.ReviewRequest;
-import com.b2b.avis.model.Review;
-import com.b2b.avis.repository.ReviewRepository;
-import com.b2b.avis.service.ReviewService;
+import com.b2b.dto.ReviewRequest;
+import com.b2b.model.Review;
+import com.b2b.repository.ReviewRepository;
+import com.b2b.service.ReviewService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

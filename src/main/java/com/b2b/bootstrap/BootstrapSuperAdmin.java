@@ -30,13 +30,9 @@ public class BootstrapSuperAdmin implements CommandLineRunner {
         }
 
         Company sa = new Company();
-        sa.setMustChangePassword(true);
-        sa.setFullName("Super Admin"); // Make sure this setter exists in Company
+        sa.setName("Super Admin");
         sa.setEmail("superadmin@b2b.local");
         sa.setPassword(encoder.encode(defaultPassword()));
-        sa.setRole(Role.SUPER_ADMIN); // Make sure this setter exists in Company
-        // If setCompany does not exist, remove or adjust this line
-        // sa.setCompany(null);
         sa.setEnabled(true); // Make sure this setter exists in Company
         users.save(sa);
 
