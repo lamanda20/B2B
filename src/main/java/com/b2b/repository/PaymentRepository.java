@@ -1,7 +1,7 @@
 package com.b2b.repository;
 
 import com.b2b.model.Payment;
-import com.b2b.model.PaymentStatus;
+import com.b2b.model.StatutPaiement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,7 +17,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByTransactionId(String transactionId);
 
     // Recherche par statut
-    List<Payment> findByStatus(PaymentStatus status);
+    List<Payment> findByStatus(StatutPaiement status);
 
     // Recherche par commande
     List<Payment> findByCommandeId(Long commandeId);

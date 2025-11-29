@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 
+// Use fully-qualified type for User to avoid unresolved symbol in some environments
+
 @Entity
 @Table(name = "payments")
 @Data
@@ -29,7 +31,7 @@ public class Payment {
     private String history;  // Historique des actions (ex. : "Validé le 2023-10-01")
 
     @Enumerated(EnumType.STRING)
-    private PaymentStatus status = PaymentStatus.EN_ATTENTE;  // Statut par défaut
+    private StatutPaiement status = StatutPaiement.EN_ATTENTE;  // Statut par défaut
 
     // Relations
     @ManyToOne

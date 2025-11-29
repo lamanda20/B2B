@@ -41,6 +41,21 @@ public class Company {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    // Flag used by AccountServiceImpl
+    @Column(nullable = false)
+    private boolean mustChangePassword = false;
+
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
+
+    // Role used for counting/filtering companies
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private Role role = Role.Company;
+
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();

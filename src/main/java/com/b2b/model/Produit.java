@@ -24,4 +24,27 @@ public class Produit {
 
     @OneToMany(mappedBy = "produit")
     private List<LigneCommande> lignesCommande;
+
+    // Relations expected by services/controllers
+    @ManyToOne
+    @JoinColumn(name = "company_id")
+    private Company company;
+
+    @ManyToOne
+    @JoinColumn(name = "categorie_id")
+    private Categorie categorie;
+
+    // Compatibility getters used across the codebase
+    public double getPrix() {
+        return price != null ? price.doubleValue() : 0.0;
+    }
+
+    // Some services expect getCompany() and getCategorie()
+    public Company getCompany() {
+        return this.company;
+    }
+
+    public Categorie getCategorie() {
+        return this.categorie;
+    }
 }

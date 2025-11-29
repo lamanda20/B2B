@@ -1,18 +1,15 @@
 package com.b2b.service;
 
-import com.b2b.model.Produit;
+import com.b2b.dto.ProduitCreateDTO;
+import com.b2b.dto.ProduitDTO;
+import com.b2b.dto.ProduitUpdateDTO;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ProduitService {
-    List<Produit> findAll();
-    Optional<Produit> findById(Long id);
-    Produit create(Produit produit);
-    Produit update(Long id, Produit produitDetails);
+    List<ProduitDTO> findAll(String q);
+    ProduitDTO findById(Long id);
+    ProduitDTO create(ProduitCreateDTO in);
+    ProduitDTO update(Long id, ProduitUpdateDTO in);
     void delete(Long id);
-    List<Produit> findByCompany(Long companyId);
-    List<Produit> findByCategorie(Integer categorieId);
-    List<Produit> searchByName(String name);
-    List<Produit> findInStock();
 }

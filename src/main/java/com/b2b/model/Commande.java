@@ -47,6 +47,18 @@ public class Commande {
         lignes.add(lignecmd);
     }
 
+    // Compatibility method expected by services: camelCase
+    public void ajouterLigne(LigneCommande lignecmd) {
+        ajouterligne(lignecmd);
+    }
+
+    // Method used by CommandeServiceImpl to validate a commande
+    public StatutCommande validerCommande() {
+        // example simple validation flow: set statut to VALIDEE
+        this.statut = StatutCommande.VALIDEE;
+        return this.statut;
+    }
+
     public double calculerTotal(){
         double total= 0.0;
         for ( LigneCommande lcm : lignes){

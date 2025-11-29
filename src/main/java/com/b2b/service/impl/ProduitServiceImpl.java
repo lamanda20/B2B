@@ -1,5 +1,8 @@
 package com.b2b.service.impl;
 
+import com.b2b.dto.ProduitCreateDTO;
+import com.b2b.dto.ProduitDTO;
+import com.b2b.dto.ProduitUpdateDTO;
 import com.b2b.model.Produit;
 import com.b2b.repository.ProduitRepository;
 import com.b2b.service.ProduitService;
@@ -9,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -21,35 +25,56 @@ public class ProduitServiceImpl implements ProduitService {
         this.produitRepository = produitRepository;
     }
 
-    @Override
-    public List<Produit> findAll() {
-        return produitRepository.findAll();
+    private ProduitDTO toDto(Produit p) {
+        if (p == null) return null;
+        ProduitDTO dto = new ProduitDTO();
+        dto.id = p.getId();
+        dto.name = p.getName();
+        dto.description = p.getDescription();
+        dto.price = p.getPrice();
+        dto.stock = p.getStock();
+        dto.sellerId = p.getSellerId();
+        return dto;
+    }
+
+    private Produit fromCreateDto(ProduitCreateDTO in) {
+        Produit p = new Produit();
+        p.setName(in.name);
+        p.setDescription(in.description);
+        p.setPrice(in.price);
+        p.setStock(in.stock != null ? in.stock : 0);
+        p.setSellerId(in.sellerId);
+        return p;
     }
 
     @Override
-    public Optional<Produit> findById(Long id) {
-        return produitRepository.findById(id);
+    public List<ProduitDTO> findAll(String q) {
+        List<Produit> list = (q != null && !q.isBlank()) ? produitRepository.findByNameContainingIgnoreCase(q) : produitRepository.findAll();
+        return list.stream().map(this::toDto).collect(Collectors.toList());
     }
 
     @Override
-    public Produit create(Produit produit) {
-        return produitRepository.save(produit);
+    public ProduitDTO findById(Long id) {
+        return produitRepository.findById(id).map(this::toDto).orElseThrow(() -> new RuntimeException("Produit non trouvé: " + id));
     }
 
     @Override
-    public Produit update(Long id, Produit produitDetails) {
-        return produitRepository.findById(id)
-                .map(produit -> {
-                    produit.setName(produitDetails.getName());
-                    produit.setDescription(produitDetails.getDescription());
-                    produit.setPrice(produitDetails.getPrice());
-                    produit.setStock(produitDetails.getStock());
-                    if (produitDetails.getCategorie() != null) {
-                        produit.setCategorie(produitDetails.getCategorie());
-                    }
-                    return produitRepository.save(produit);
-                })
-                .orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'id: " + id));
+    public ProduitDTO create(ProduitCreateDTO in) {
+        Produit saved = produitRepository.save(fromCreateDto(in));
+        return toDto(saved);
+    }
+
+    @Override
+    public ProduitDTO update(Long id, ProduitUpdateDTO in) {
+        Produit updated = produitRepository.findById(id).map(produit -> {
+            produit.setName(in.name);
+            produit.setDescription(in.description);
+            produit.setPrice(in.price);
+            produit.setStock(in.stock != null ? in.stock : produit.getStock());
+            produit.setSellerId(in.sellerId);
+            return produitRepository.save(produit);
+        }).orElseThrow(() -> new RuntimeException("Produit non trouvé avec l'id: " + id));
+        return toDto(updated);
     }
 
     @Override
@@ -57,23 +82,4 @@ public class ProduitServiceImpl implements ProduitService {
         produitRepository.deleteById(id);
     }
 
-    @Override
-    public List<Produit> findByCompany(Long companyId) {
-        return produitRepository.findByCompanyId(companyId);
-    }
-
-    @Override
-    public List<Produit> findByCategorie(Integer categorieId) {
-        return produitRepository.findByCategorieIdCat(categorieId);
-    }
-
-    @Override
-    public List<Produit> searchByName(String name) {
-        return produitRepository.findByNameContainingIgnoreCase(name);
-    }
-
-    @Override
-    public List<Produit> findInStock() {
-        return produitRepository.findByStockGreaterThan(0);
-    }
 }
