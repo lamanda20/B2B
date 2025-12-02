@@ -71,7 +71,7 @@ public class StatsController {
     }
 
     // Nombre Companies Actives
-    @GetMapping("/companies/actives")
+    @GetMapping("/companies/actives/nbr")
     public ResponseEntity<Integer> nombreCompaniesActives() {
         return ResponseEntity.ok(statsService.nombreCompaniesActives());
     }

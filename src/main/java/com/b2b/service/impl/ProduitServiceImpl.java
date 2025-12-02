@@ -3,9 +3,11 @@ package com.b2b.service.impl;
 import com.b2b.dto.ProductDto;
 import com.b2b.model.Categorie;
 import com.b2b.model.Company;
+import com.b2b.model.LigneCommande;
 import com.b2b.model.Produit;
 import com.b2b.repository.CategorieRepository;
 import com.b2b.repository.CompanyRepository;
+import com.b2b.repository.LigneCommandeRepository;
 import com.b2b.repository.ProduitRepository;
 import com.b2b.service.ProduitService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class ProduitServiceImpl implements ProduitService {
     private final ProduitRepository produitRepository;
     private final CategorieRepository categorieRepository;
     private final CompanyRepository companyRepository;
+    private final LigneCommandeRepository ligneCommandeRepository;
 
     @Override
     public List<Produit> findAll() {
@@ -77,6 +80,18 @@ public class ProduitServiceImpl implements ProduitService {
 
     @Override
     public void delete(Long id) {
+
+        List<LigneCommande> ligneCommandes =  ligneCommandeRepository.findAll();
+
+        for(LigneCommande lc : ligneCommandes){
+            System.out.println("wsselt tal hena 1++++++++++++++++ ");
+
+            if(lc.getProduit() != null && lc.getProduit().getId().equals(id)){
+                System.out.println("wsselt tal hena 2++++++++++++++++ ");
+                lc.setProduit(null);
+                ligneCommandeRepository.save(lc);
+            }
+        }
         produitRepository.deleteById(id);
     }
 

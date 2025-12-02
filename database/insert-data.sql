@@ -112,6 +112,20 @@ INSERT INTO payments (moyen, produit, company_id, date, amount, status, commande
 ('Carte', 'Ordinateur Portable HP + Souris', 1, '2025-11-01', 8000.00, 'PAYE', 1),
 ('Virement', 'Écran + Clavier', 2, '2025-11-03', 1850.00, 'PAYE', 2);
 
+-- ================================================
+--  11) COMPANY — Données d'exemple réalistes
+-- ================================================
+INSERT INTO company (id, address, city, created_at, email, enabled, ice, must_change_password, name, password, phone) VALUES
+(3, 'Hay Riad Lot 252', 'Rabat', '2024-03-15 09:13:00', 'support@btpco.ma', 1, '323456789012345', 0, 'BTP & Co', 'hashedpwd3', '0667788990'),
+(4, 'Quartier Industriel Sidi Ghanem', 'Marrakech', '2024-03-21 16:30:00', 'admin@megaconstruct.ma', 1, '423456789012345', 0, 'MegaConstruct', 'hashedpwd4', '0678901234'),
+(5, 'Zone Franche de Tanger', 'Tanger', '2024-04-01 11:40:00', 'contact@northbuild.ma', 1, '523456789012345', 0, 'NorthBuild', 'hashedpwd5', '0601234567'),
+(6, 'Technopark Rabat, Immeuble B', 'Rabat', '2024-04-12 15:57:00', 'info@technoelectro.ma', 1, '623456789012345', 0, 'TechnoElectro', 'hashedpwd6', '0622334455'),
+(7, 'Bd Mohamed V', 'Agadir', '2024-04-22 08:20:00', 'support@sudmateriel.ma', 1, '723456789012345', 0, 'SudMateriel', 'hashedpwd7', '0644112233'),
+(8, 'Lotissement Ennakhil, Guéliz', 'Marrakech', '2024-05-02 19:15:00', 'contact@almadina.ma', 1, '823456789012345', 0, 'AlMadina Equip', 'hashedpwd8', '0622559911'),
+(9, 'Boulevard Al Qods', 'Fès', '2024-05-11 12:00:00', 'info@fesindustry.ma', 1, '923456789012345', 0, 'FesIndustry', 'hashedpwd9', '0688997744'),
+(10,'Parc Industriel Sapino', 'Nouaceur', '2024-06-01 09:00:00', 'admin@metalogic.ma', 1, '103456789012345', 0, 'MetaLogic', 'hashedpwd10','0699881122');
+
+
 COMMIT;
 
 -- Réactiver les vérifications de clés étrangères

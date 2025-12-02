@@ -4,14 +4,15 @@ import com.b2b.dto.CategoryStatsDTO;
 import com.b2b.dto.CompanyStatsDTO;
 import com.b2b.dto.ProductStatsDTO;
 import com.b2b.model.*;
-        import com.b2b.repository.CommandeRepository;
+import com.b2b.repository.CommandeRepository;
+import com.b2b.repository.CompanyRepository;
 import com.b2b.repository.ProduitRepository;
 import com.b2b.service.StatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-        import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +21,33 @@ public class StatsServiceImpl implements StatsService {
     private final CommandeRepository commandeRepository;
     private final ProduitRepository produitRepository;
 
-    // Savoir les compagies fidelles ( Qui utilisisent notre apllication plusieur fois lors de l'achat )
+    // ============================================================
+    //              HELPER : toujours retourner TOP3
+    // ============================================================
+
+    private <T> List<T> ensureTop3(List<T> list, T placeholder) {
+
+        if (list == null) list = new ArrayList<>();
+
+        // Si vide → remplir 3 fois
+        if (list.isEmpty()) {
+            return List.of(placeholder, placeholder, placeholder);
+        }
+
+        // Si < 3 → compléter
+        List<T> result = new ArrayList<>(list);
+        while (result.size() < 3) {
+            result.add(placeholder);
+        }
+
+        // Si > 3 → tronquer
+        return result.subList(0, 3);
+    }
+
+
+    // ============================================================
+    //                BEST COMPANIES ACHETEUSES
+    // ============================================================
 
     @Override
     public List<CompanyStatsDTO> bestCompaniesAcheteuses() {
@@ -44,18 +71,22 @@ public class StatsServiceImpl implements StatsService {
                 .collect(Collectors.toList());
     }
 
-    // TOP 3
 
     @Override
     public List<CompanyStatsDTO> top3CompaniesAcheteuses() {
-        return bestCompaniesAcheteuses()
-                .stream()
-                .limit(3)
-                .collect(Collectors.toList());
+
+        CompanyStatsDTO placeholder = new CompanyStatsDTO(
+                0L, "Aucune entreprise", 0.0
+        );
+
+        return ensureTop3(bestCompaniesAcheteuses(), placeholder);
     }
 
 
-    // Savoir les Best Sellers ( Qui gagne beaucoup d'argent d'apres notre plateforme )
+    // ============================================================
+    //                BEST COMPANIES VENDEUSES
+    // ============================================================
+
     @Override
     public List<CompanyStatsDTO> bestCompaniesVendeuses() {
 
@@ -64,9 +95,11 @@ public class StatsServiceImpl implements StatsService {
 
         for (Commande cmd : commandes) {
             for (LigneCommande ligne : cmd.getLignes()) {
-                Company vendeur = ligne.getProduit().getCompany();
-                double total = ligne.getSousTotal();
-                totals.put(vendeur, totals.getOrDefault(vendeur, 0.0) + total);
+                if(ligne.getProduit() != null) {
+                    Company vendeur = ligne.getProduit().getCompany();
+                    double total = ligne.getSousTotal();
+                    totals.put(vendeur, totals.getOrDefault(vendeur, 0.0) + total);
+                }
             }
         }
 
@@ -80,18 +113,21 @@ public class StatsServiceImpl implements StatsService {
                 .collect(Collectors.toList());
     }
 
-    // TOP 3
 
     @Override
     public List<CompanyStatsDTO> top3CompaniesVendeuses() {
-        return bestCompaniesVendeuses()
-                .stream()
-                .limit(3)
-                .collect(Collectors.toList());
+
+        CompanyStatsDTO placeholder = new CompanyStatsDTO(
+                0L, "Aucune entreprise", 0.0
+        );
+
+        return ensureTop3(bestCompaniesVendeuses(), placeholder);
     }
 
 
-    // Les produit les plus vendus (Qui ont garanti une grand somme d'argent a leur company )
+    // ============================================================
+    //                    BEST PRODUCTS
+    // ============================================================
 
     @Override
     public List<ProductStatsDTO> bestProducts() {
@@ -101,9 +137,11 @@ public class StatsServiceImpl implements StatsService {
 
         for (Commande cmd : commandes) {
             for (LigneCommande ligne : cmd.getLignes()) {
-                Produit p = ligne.getProduit();
-                double total = ligne.getSousTotal();
-                totals.put(p, totals.getOrDefault(p, 0.0) + total);
+                if(ligne.getProduit() != null) {
+                    Produit p = ligne.getProduit();
+                    double total = ligne.getSousTotal();
+                    totals.put(p, totals.getOrDefault(p, 0.0) + total);
+                }
             }
         }
 
@@ -117,17 +155,22 @@ public class StatsServiceImpl implements StatsService {
                 .collect(Collectors.toList());
     }
 
-    // TOP 3
+
     @Override
     public List<ProductStatsDTO> top3Products() {
-        return bestProducts()
-                .stream()
-                .limit(3)
-                .collect(Collectors.toList());
+
+        ProductStatsDTO placeholder = new ProductStatsDTO(
+                0L, "Aucun produit", 0.0
+        );
+
+        return ensureTop3(bestProducts(), placeholder);
     }
 
 
-    // les categorie qui sont un centre d'interet pour nos Companies
+    // ============================================================
+    //                    BEST CATEGORIES
+    // ============================================================
+
     @Override
     public List<CategoryStatsDTO> bestCategories() {
 
@@ -136,9 +179,11 @@ public class StatsServiceImpl implements StatsService {
 
         for (Commande cmd : commandes) {
             for (LigneCommande ligne : cmd.getLignes()) {
-                Categorie cat = ligne.getProduit().getCategorie();
-                double total = ligne.getSousTotal();
-                totals.put(cat, totals.getOrDefault(cat, 0.0) + total);
+                if(ligne.getProduit() != null) {
+                    Categorie cat = ligne.getProduit().getCategorie();
+                    double total = ligne.getSousTotal();
+                    totals.put(cat, totals.getOrDefault(cat, 0.0) + total);
+                }
             }
         }
 
@@ -152,18 +197,21 @@ public class StatsServiceImpl implements StatsService {
                 .collect(Collectors.toList());
     }
 
-    // TOP 3
 
     @Override
     public List<CategoryStatsDTO> top3Categories() {
-        return bestCategories()
-                .stream()
-                .limit(3)
-                .collect(Collectors.toList());
+
+        CategoryStatsDTO placeholder = new CategoryStatsDTO(
+                0, "Aucune catégorie", 0.0
+        );
+
+        return ensureTop3(bestCategories(), placeholder);
     }
 
 
-    // nombre de compagnie active (i.e: qui ont soit passé au moins une commande soit vendu au moins un produit
+    // ============================================================
+    //                      NOMBRE
+    // ============================================================
 
     @Override
     public int nombreCompaniesActives() {
@@ -171,28 +219,29 @@ public class StatsServiceImpl implements StatsService {
         Set<Company> actives = new HashSet<>();
         List<Commande> commandes = commandeRepository.findAll();
 
-        for (Commande cmd : commandes) {
+        if(!commandes.isEmpty()) {
+            for (Commande cmd : commandes) {
 
-            actives.add(cmd.getCompany());
+                actives.add(cmd.getCompany());
 
-            for (LigneCommande ligne : cmd.getLignes()) {
-                actives.add(ligne.getProduit().getCompany());
+                for (LigneCommande ligne : cmd.getLignes()) {
+                    if(ligne.getProduit() != null) {
+                        actives.add(ligne.getProduit().getCompany());
+                    }
+                }
             }
         }
 
         return actives.size();
     }
 
-    // Nombre de produits dans la plateforme
-    public int nombreProduits(){
+    @Override
+    public int nombreProduits() {
         return (int) produitRepository.count();
     }
 
-    // nombre de commandes passee
-    public int nombreCommadesPasser(){
+    @Override
+    public int nombreCommadesPasser() {
         return (int) commandeRepository.count();
     }
-
 }
-
-

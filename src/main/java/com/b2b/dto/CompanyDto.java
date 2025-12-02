@@ -9,6 +9,7 @@ public class CompanyDto {
     private String address;
     private String city;
     private String phone;
-    private String website;
+    private String createdAt;
     private String email;
+    private boolean enabled;
 }

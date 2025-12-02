@@ -27,7 +27,9 @@ public class CompanyServiceImpl implements CompanyService {
         dto.setAddress(company.getAddress());
         dto.setCity(company.getCity());
         dto.setPhone(company.getPhone());
+        dto.setEnabled(company.isEnabled());
         dto.setEmail(company.getEmail());
+        dto.setCreatedAt(company.getCreatedAt().toString());
         return dto;
     }
 
