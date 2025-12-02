@@ -11,14 +11,13 @@ public class LignePanier {
 
     private int idlignePanier;
     private int quantite;
-    private Panier panier;
+    private Cart cart;
     private Produit produit;
 
     public double getSousTotal() {
         if (produit != null && produit.getPrice() != 0) {
             BigDecimal total = BigDecimal.valueOf(produit.getPrice());
-
-            return total.doubleValue(); // keeps old method signature
+            return total.doubleValue();
         }
         return 0.0;
     }
