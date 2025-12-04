@@ -1,8 +1,12 @@
 package com.b2b.service.impl;
 
 import com.b2b.dto.CompanyDto;
+import com.b2b.model.Commande;
 import com.b2b.model.Company;
+import com.b2b.model.Produit;
+import com.b2b.repository.CommandeRepository;
 import com.b2b.repository.CompanyRepository;
+import com.b2b.repository.ProduitRepository;
 import com.b2b.service.CompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,7 +17,17 @@ import java.util.stream.Collectors;
 @Service
 public class CompanyServiceImpl implements CompanyService {
 
+    @Autowired
     private final CompanyRepository companyRepository;
+
+    @Autowired
+    private  ProduitRepository produitRepository;
+
+    @Autowired
+    private  CommandeRepository commandeRepository;
+
+    @Autowired
+    private  ProduitServiceImpl produitService;
 
     @Autowired
     public CompanyServiceImpl(CompanyRepository companyRepository) {
@@ -90,6 +104,19 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public void deleteCompany(Long id) {
+        List<Produit> produits1 = produitRepository.findAll();
+        if(produits1.isEmpty()){
+            System.out.println("wa khawi");
+            return;
+        }
+        List<Produit> produits = produitRepository.findByCompanyId(id);
+        for(Produit prod : produits){
+            produitService.delete(prod.getId());
+        }
+        List<Commande> commandes  = commandeRepository.findByCompanyId(id);
+        for(Commande cmd : commandes){
+            cmd.setCompany(null);
+        }
         companyRepository.deleteById(id);
     }
 

@@ -57,8 +57,11 @@ public class StatsServiceImpl implements StatsService {
 
         for (Commande cmd : commandes) {
             Company acheteur = cmd.getCompany();
-            double total = cmd.calculerTotal();
-            totals.put(acheteur, totals.getOrDefault(acheteur, 0.0) + total);
+            if(! (acheteur == null)) {
+
+                double total = cmd.calculerTotal();
+                totals.put(acheteur, totals.getOrDefault(acheteur, 0.0) + total);
+            }
         }
 
         return totals.entrySet().stream()
