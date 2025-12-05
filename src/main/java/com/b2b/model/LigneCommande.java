@@ -1,5 +1,6 @@
 package com.b2b.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,13 +13,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LigneCommande {
 
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idLigneCommande;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "commande_id")
     private Commande commande;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produit_id")

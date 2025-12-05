@@ -19,4 +19,8 @@ public interface CommandeService {
     void afficherCommande(Long commandeId);
     Commande updateStatut(Long commandeId, StatutCommande statut);
     void delete(Long id);
+    List<Commande> findForSeller(Long sellerCompanyId);
+    List<Commande> findOrdersForSeller(Long sellerId);
+    Commande updateStatus(Long orderId, StatutCommande statut);
+
 }

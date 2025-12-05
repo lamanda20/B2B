@@ -3,11 +3,9 @@ package com.b2b.service.impl;
 import com.b2b.dto.ProductDto;
 import com.b2b.model.Categorie;
 import com.b2b.model.Company;
-import com.b2b.model.LigneCommande;
 import com.b2b.model.Produit;
 import com.b2b.repository.CategorieRepository;
 import com.b2b.repository.CompanyRepository;
-import com.b2b.repository.LigneCommandeRepository;
 import com.b2b.repository.ProduitRepository;
 import com.b2b.service.ProduitService;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +25,10 @@ public class ProduitServiceImpl implements ProduitService {
     private final ProduitRepository produitRepository;
     private final CategorieRepository categorieRepository;
     private final CompanyRepository companyRepository;
-    private final LigneCommandeRepository ligneCommandeRepository;
 
+    // ===========================================
+    // FIND
+    // ===========================================
     @Override
     public List<Produit> findAll() {
         return produitRepository.findAll();
@@ -39,6 +39,9 @@ public class ProduitServiceImpl implements ProduitService {
         return produitRepository.findById(id);
     }
 
+    // ===========================================
+    // CREATE
+    // ===========================================
     @Override
     public Produit create(ProductDto dto) {
         Produit p = new Produit();
@@ -46,6 +49,9 @@ public class ProduitServiceImpl implements ProduitService {
         return produitRepository.save(p);
     }
 
+    // ===========================================
+    // UPDATE
+    // ===========================================
     @Override
     public Produit update(Long id, ProductDto dto) {
         return produitRepository.findById(id)
@@ -64,7 +70,6 @@ public class ProduitServiceImpl implements ProduitService {
         p.setImageUrl(dto.getImageUrl());
         p.setFilterTag(dto.getFilterTag());
 
-
         if (dto.getCategoryId() != null) {
             Categorie c = categorieRepository.findById(dto.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Catégorie invalide"));
@@ -78,23 +83,22 @@ public class ProduitServiceImpl implements ProduitService {
         }
     }
 
+    // ===========================================
+    // DELETE
+    // ===========================================
     @Override
     public void delete(Long id) {
-
-        List<LigneCommande> ligneCommandes =  ligneCommandeRepository.findAll();
-
-        for(LigneCommande lc : ligneCommandes){
-            System.out.println("wsselt tal hena 1++++++++++++++++ ");
-
-            if(lc.getProduit() != null && lc.getProduit().getId().equals(id)){
-                System.out.println("wsselt tal hena 2++++++++++++++++ ");
-                lc.setProduit(null);
-                ligneCommandeRepository.save(lc);
-            }
+        if (!produitRepository.existsById(id)) {
+            throw new RuntimeException("Produit non trouvé");
         }
+
+        // DO NOT TOUCH LigneCommande → Orders must stay immutable.
         produitRepository.deleteById(id);
     }
 
+    // ===========================================
+    // FILTERS
+    // ===========================================
     @Override
     public List<Produit> findByCompany(Long companyId) {
         return produitRepository.findByCompanyId(companyId);
@@ -115,54 +119,22 @@ public class ProduitServiceImpl implements ProduitService {
         return produitRepository.findByStockGreaterThan(0);
     }
 
-
     @Override
     public List<Produit> filter(int categoryId, Map<String, String> filters) {
 
-        // Normalize all filter values
         Map<String, String> normalized = new HashMap<>();
-        filters.forEach((k, v) -> normalized.put(k.toLowerCase(), v.trim().toLowerCase()));
+        filters.forEach((k, v) ->
+                normalized.put(k.toLowerCase(), v.trim().toLowerCase())
+        );
 
         return produitRepository.findByCategorieIdCat(categoryId)
                 .stream()
                 .filter(p -> {
                     String tag = p.getFilterTag();
                     if (tag == null) return false;
-
                     String normalizedTag = tag.trim().toLowerCase();
-
-                    // Keep product only if its tag matches ANY of the selected filter values
                     return normalized.values().contains(normalizedTag);
                 })
                 .toList();
     }
-
-
-    private boolean matchFilters(Produit p, Map<String, String> filters) {
-
-        for (var entry : filters.entrySet()) {
-            String key = entry.getKey();
-            String expected = entry.getValue();
-
-            if (expected == null) continue;
-
-            switch (key.toLowerCase()) {
-                case "brand":  // brand = filterTag
-                    if (p.getFilterTag() == null) return false;
-                    if (!p.getFilterTag().equalsIgnoreCase(expected)) return false;
-                    break;
-
-                case "power": // in future if you add a power attribute
-                    // For now ignore or return true
-                    break;
-
-                default:
-                    System.out.println("Unknown filter key: " + key);
-                    break;
-            }
-        }
-
-        return true;
-    }
-
 }

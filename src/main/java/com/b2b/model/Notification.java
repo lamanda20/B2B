@@ -1,25 +1,32 @@
 package com.b2b.model;
 
+import com.b2b.model.Company;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
-@Entity
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Entity
+@Table(name = "notifications")
 public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
-    private String title;
-    private String message;
-    private LocalDateTime createdAt;
-    private boolean seen;
+    @ManyToOne
+    private Company company;
 
-    public Notification() {
-        this.createdAt = LocalDateTime.now();
-        this.seen = false;
-    }
+    private String message;
+
+    private LocalDateTime createdAt;
+
+    @Column(name = "is_read")
+    private boolean read;
+
 }

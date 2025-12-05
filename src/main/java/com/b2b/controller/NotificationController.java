@@ -1,31 +1,27 @@
+// src/main/java/com/b2b/controller/NotificationController.java
 package com.b2b.controller;
 
 import com.b2b.model.Notification;
 import com.b2b.service.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
+@RequiredArgsConstructor
 public class NotificationController {
 
-    @Autowired
-    private NotificationService service;
+    private final NotificationService notificationService;
 
-    @GetMapping("/recent/{userId}")
-    public List<Notification> recent(@PathVariable Long userId) {
-        return service.getRecent(userId);
+    @GetMapping("/{companyId}")
+    public List<Notification> getNotifications(@PathVariable Long companyId) {
+        return notificationService.getForCompany(companyId);
     }
 
-    @GetMapping("/all/{userId}")
-    public List<Notification> all(@PathVariable Long userId) {
-        return service.getAll(userId);
-    }
-
-    @PutMapping("/seen/{id}")
-    public void seen(@PathVariable Long id) {
-        service.markSeen(id);
+    @PostMapping("/{id}/read")
+    public void markAsRead(@PathVariable Long id) {
+        notificationService.markAsRead(id);
     }
 }
