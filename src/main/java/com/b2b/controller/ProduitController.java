@@ -53,10 +53,17 @@ public class ProduitController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        produitService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            produitService.delete(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(409).body(
+                    "Impossible de supprimer : le produit est utilisé dans des commandes."
+            );
+        }
     }
+
 
     @GetMapping("/company/{companyId}")
     public ResponseEntity<List<ProductDto>> findByCompany(@PathVariable Long companyId) {

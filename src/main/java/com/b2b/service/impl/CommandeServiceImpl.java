@@ -3,7 +3,9 @@ package com.b2b.service.impl;
 
 import com.b2b.model.*;
 import com.b2b.repository.CommandeRepository;
+import com.b2b.repository.CompanyRepository;
 import com.b2b.repository.LigneCommandeRepository;
+import com.b2b.repository.ProduitRepository;
 import com.b2b.service.CommandeService;
 import com.b2b.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -23,6 +26,8 @@ public class CommandeServiceImpl implements CommandeService {
     private final CommandeRepository commandeRepository;
     private final LigneCommandeRepository ligneCommandeRepository;
     private final NotificationService notificationService;
+    private final CompanyRepository companyRepository;
+    private final ProduitRepository produitRepository;
 
     @Override
     public List<Commande> findAll() {
@@ -51,7 +56,8 @@ public class CommandeServiceImpl implements CommandeService {
 
     @Override
     public Commande create(Commande commande) {
-        // Ensure refCommande and dateCommande are set
+
+        // 1) Ensure reference + date set
         if (commande.getRefCommande() == null || commande.getRefCommande().isBlank()) {
             String ref = "CMD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
             commande.setRefCommande(ref);
@@ -60,24 +66,46 @@ public class CommandeServiceImpl implements CommandeService {
             commande.setDateCommande(LocalDate.now());
         }
 
-        // persist commande + lignes
+        // 2) Reload buyer from DB (JSON only gives buyer ID)
+        Long buyerId = commande.getCompany().getId();
+        Company buyer = companyRepository.findById(buyerId)
+                .orElseThrow(() -> new RuntimeException("Buyer company not found"));
+        commande.setCompany(buyer);
+
+        // 3) Rebuild lignes with REAL product entities
+        List<LigneCommande> rebuilt = commande.getLignes().stream()
+                .map(l -> {
+                    Produit p = produitRepository.findById(l.getProduit().getId())
+                            .orElseThrow(() -> new RuntimeException("Product not found"));
+
+                    LigneCommande nl = new LigneCommande();
+                    nl.setProduit(p);
+                    nl.setQuantite(l.getQuantite());
+                    nl.setPrixUnitaire(l.getPrixUnitaire());
+                    nl.setCommande(commande);
+                    return nl;
+                }).collect(Collectors.toList());
+
+        commande.setLignes(rebuilt);
+
+        // 4) Save everything
         Commande saved = commandeRepository.save(commande);
 
-        // Simple assumption: all products of this commande come from same seller
+        // 5) Detect seller (first product's company)
         Long sellerId = null;
-        for (LigneCommande l : saved.getLignes()) {
-            if (l.getProduit() != null && l.getProduit().getCompany() != null) {
-                sellerId = l.getProduit().getCompany().getId();
-                break;
-            }
+        if (!saved.getLignes().isEmpty()) {
+            sellerId = saved.getLignes().get(0).getProduit().getCompany().getId();
         }
+
+        // 6) Notify seller
         if (sellerId != null) {
             notificationService.sendToCompany(
                     sellerId,
                     "Nouvelle commande " + saved.getRefCommande()
-                            + " de " + saved.getCompany().getName()
+                            + " de " + buyer.getName()
             );
         }
+
         return saved;
     }
 
@@ -149,8 +177,17 @@ public class CommandeServiceImpl implements CommandeService {
 
     @Override
     public List<Commande> findOrdersForSeller(Long sellerId) {
-        return commandeRepository.findOrdersForSeller(sellerId);
+        return commandeRepository.findAll()
+                .stream()
+                .filter(c ->
+                        c.getLignes().stream()
+                                .anyMatch(l ->
+                                        l.getProduit().getCompany().getId().equals(sellerId)
+                                )
+                )
+                .collect(Collectors.toList());
     }
+
 
     @Override
     public Commande updateStatus(Long orderId, StatutCommande statut) {

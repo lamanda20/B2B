@@ -1,14 +1,19 @@
 package com.b2b.controller;
 
 import com.b2b.dto.CommandeDto;
+import com.b2b.dto.LigneCommandeDto;
 import com.b2b.mapper.CommandeMapper;
-import com.b2b.model.StatutCommande;
+import com.b2b.model.*;
+import com.b2b.repository.CompanyRepository;
+import com.b2b.repository.ProduitRepository;
 import com.b2b.service.CommandeService;
 
+import com.b2b.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -74,7 +79,7 @@ public class CommandeController {
     // CREATE COMMAND
     // ==========================
     @PostMapping
-    public ResponseEntity<CommandeDto> createCommande(@RequestBody com.b2b.model.Commande commande) {
+    public ResponseEntity<CommandeDto> createCommande(@RequestBody Commande commande) {
         var created = commandeService.create(commande);
         return ResponseEntity.ok(CommandeMapper.toDto(created));
     }

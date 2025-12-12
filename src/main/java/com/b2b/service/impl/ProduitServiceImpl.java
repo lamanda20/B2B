@@ -92,9 +92,13 @@ public class ProduitServiceImpl implements ProduitService {
             throw new RuntimeException("Produit non trouvé");
         }
 
-        // DO NOT TOUCH LigneCommande → Orders must stay immutable.
-        produitRepository.deleteById(id);
+        try {
+            produitRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new RuntimeException("Impossible de supprimer : le produit est utilisé dans une commande.");
+        }
     }
+
 
     // ===========================================
     // FILTERS

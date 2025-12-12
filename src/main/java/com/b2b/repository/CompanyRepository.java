@@ -11,6 +11,9 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     boolean existsByNameIgnoreCase(String name);
     Optional<Company> findByEmailIgnoreCase(String email);
 
+    @Override
+    Optional<Company> findById(Long aLong);
+
     // Méthodes alias attendues par le code existant
     boolean existsByEmail(String email);
     Optional<Company> findByEmail(String email);
