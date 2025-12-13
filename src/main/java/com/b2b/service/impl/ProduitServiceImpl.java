@@ -126,19 +126,28 @@ public class ProduitServiceImpl implements ProduitService {
     @Override
     public List<Produit> filter(int categoryId, Map<String, String> filters) {
 
-        Map<String, String> normalized = new HashMap<>();
-        filters.forEach((k, v) ->
-                normalized.put(k.toLowerCase(), v.trim().toLowerCase())
-        );
+        if (filters == null || filters.isEmpty()) {
+            return produitRepository.findByCategorieIdCat(categoryId);
+        }
 
         return produitRepository.findByCategorieIdCat(categoryId)
                 .stream()
                 .filter(p -> {
-                    String tag = p.getFilterTag();
-                    if (tag == null) return false;
-                    String normalizedTag = tag.trim().toLowerCase();
-                    return normalized.values().contains(normalizedTag);
+                    if (p.getFilterTag() == null) return false;
+
+                    String tag = p.getFilterTag().toLowerCase();
+
+                    // AND logic: all filters must match
+                    for (Map.Entry<String, String> entry : filters.entrySet()) {
+                        String expected = entry.getKey().toLowerCase() + "="
+                                + entry.getValue().toLowerCase();
+                        if (!tag.contains(expected)) {
+                            return false;
+                        }
+                    }
+                    return true;
                 })
                 .toList();
     }
+
 }

@@ -2,12 +2,15 @@ package com.b2b.service.impl;
 
 import com.b2b.dto.CategoryDto;
 import com.b2b.model.Categorie;
+import com.b2b.model.Produit;
 import com.b2b.repository.CategorieRepository;
+import com.b2b.repository.ProduitRepository;
 import com.b2b.service.CategorieService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,6 +21,20 @@ import java.util.Optional;
 public class CategorieServiceImpl implements CategorieService {
 
     private final CategorieRepository categorieRepository;
+    private final ProduitRepository produitRepository;
+
+    private static final Map<Integer, List<String>> CATEGORY_ATTRIBUTES = Map.of(
+            1, List.of("brand", "power", "weight"),     // Heavy equipment
+            2, List.of("brand", "material"),            // Building materials
+            3, List.of("brand", "voltage", "phase"),    // Electrical
+            4, List.of("brand", "norm"),                // PPE
+            5, List.of("brand", "type"),                // Tools
+            6, List.of("brand", "diameter")             // Plumbing
+    );
+
+    private List<String> getAttributesForCategory(Integer categoryId) {
+        return CATEGORY_ATTRIBUTES.getOrDefault(categoryId, List.of("brand"));
+    }
 
     @Override
     public List<Categorie> findAll() {
@@ -43,7 +60,6 @@ public class CategorieServiceImpl implements CategorieService {
         Categorie c = new Categorie();
         c.setName(dto.name());
         c.setDescription(dto.description());
-
         return categorieRepository.save(c);
     }
 
@@ -63,49 +79,42 @@ public class CategorieServiceImpl implements CategorieService {
         categorieRepository.deleteById(id);
     }
 
+    /**
+     * CORE FILTER LOGIC
+     * Reads filterTag = "key=value;key=value"
+     * Groups values per key
+     */
     @Override
     public Map<String, List<String>> getFiltersForCategory(Integer id) {
 
-        return switch (id) {
+        List<Produit> products = produitRepository.findByCategorieIdCat(id);
+        List<String> allowedAttrs = getAttributesForCategory(id);
 
-            // 1) Heavy Machinery
-            case 1 -> Map.of(
-                    "brand", List.of("Caterpillar", "Komatsu", "Volvo", "Manitou", "HAMM"),
-                    "power", List.of("100 kW", "200 kW", "300 kW")
-            );
+        Map<String, List<String>> result = new HashMap<>();
+        for (String attr : allowedAttrs) {
+            result.put(attr, new java.util.ArrayList<>());
+        }
 
-            // 2) Construction Materials
-            case 2 -> Map.of(
-                    "material", List.of("Cement", "Sand", "Gravel", "Steel", "Blocks", "Tiles"),
-                    "grade", List.of("Standard", "Premium")
-            );
+        for (Produit p : products) {
+            if (p.getFilterTag() == null || p.getFilterTag().isBlank()) continue;
 
-            // 3) Electrical Equipment
-            case 3 -> Map.of(
-                    "voltage", List.of("220V", "380V"),
-                    "phase", List.of("Single Phase", "Three Phase")
-            );
+            String[] pairs = p.getFilterTag().split(";");
+            for (String pair : pairs) {
+                String[] kv = pair.split("=");
+                if (kv.length != 2) continue;
 
-            // 4) Industrial Safety
-            case 4 -> Map.of(
-                    "size", List.of("S", "M", "L", "XL"),
-                    "certification", List.of("EN-397", "Class 2", "S3")
-            );
+                String key = kv[0].trim();
+                String value = kv[1].trim();
 
-            // 5) Tools & Hardware
-            case 5 -> Map.of(
-                    "brand", List.of("Bosch", "Makita"),
-                    "power", List.of("500W", "750W", "1000W")
-            );
+                if (!result.containsKey(key)) continue;
 
-            // 6) Plumbing & HVAC
-            case 6 -> Map.of(
-                    "diameter", List.of("20mm", "40mm", "1 inch"),
-                    "type", List.of("Pipe", "Valve", "Pump", "Filter")
-            );
+                result.get(key).add(value);
+            }
+        }
 
-            default -> Map.of(); // no filters
-        };
+        // remove duplicates
+        result.replaceAll((k, v) -> v.stream().distinct().toList());
+
+        return result;
     }
-
 }

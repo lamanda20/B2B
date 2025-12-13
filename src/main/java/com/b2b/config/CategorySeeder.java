@@ -30,6 +30,5 @@ public class CategorySeeder implements CommandLineRunner {
                 new Categorie(null, "Plumbing & HVAC", "Heating, ventilation, and plumbing")
         ));
 
-        System.out.println(">>> Categories OK (" + categorieRepo.count() + ")");
     }
 }

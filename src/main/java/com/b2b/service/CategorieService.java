@@ -9,6 +9,8 @@ import java.util.Optional;
 
 public interface CategorieService {
 
+
+
     List<Categorie> findAll();
 
     Optional<Categorie> findById(Integer id);

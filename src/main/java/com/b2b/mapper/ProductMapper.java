@@ -31,7 +31,7 @@ public class ProductMapper {
         p.setPrice(dto.getPrice());
         p.setStock(dto.getStock());
         p.setImageUrl(dto.getImageUrl());
-        p.setFilterTag(dto.getFilterTag()); // ✔ brand kept
+        p.setFilterTag(dto.getFilterTag());
 
         return p;
     }
