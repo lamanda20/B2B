@@ -10,11 +10,12 @@ import com.b2b.model.AdminUser;
 import com.b2b.model.Company;
 import com.b2b.repository.AdminUserRepository;
 import com.b2b.repository.CompanyRepository;
+import com.b2b.service.PasswordResetService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import com.b2b.service.PasswordResetService;
 
 import java.util.Map;
 
@@ -26,7 +27,6 @@ public class AuthController {
     private final CompanyRepository companies;
     private final PasswordEncoder encoder;
     private final JwtUtil jwt;
-
     private final PasswordResetService passwordResetService;
 
     public AuthController(AdminUserRepository admins,
@@ -41,10 +41,12 @@ public class AuthController {
         this.passwordResetService = passwordResetService;
     }
 
-    // ================== REGISTER COMPANY ==================
-
+    // ======================================================
+    // REGISTER COMPANY
+    // ======================================================
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
+
         String email = req.getEmail() == null ? "" : req.getEmail().trim().toLowerCase();
 
         if (email.isBlank() || req.getPassword() == null || req.getPassword().isBlank()) {
@@ -53,19 +55,12 @@ public class AuthController {
                     .body(ApiResponse.error("Email et mot de passe sont obligatoires"));
         }
 
-        // Email déjà utilisé par un admin ?
-        if (admins.findByEmail(email).isPresent()) {
+        if (admins.findByEmail(email).isPresent() || companies.existsByEmail(email)) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
                     .body(ApiResponse.error("Cet email est déjà utilisé"));
         }
 
-        // Email déjà utilisé par une entreprise ?
-        if (companies.existsByEmail(email)) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error("Cet email est déjà utilisé"));
-        }
         if (companies.existsByIce(req.getIce())) {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
@@ -76,11 +71,11 @@ public class AuthController {
         c.setName(req.getName());
         c.setEmail(email);
         c.setIce(req.getIce());
-        c.setPassword(encoder.encode(req.getPassword())); // hash BCrypt
+        c.setPassword(encoder.encode(req.getPassword()));
         c.setAddress(req.getAddress());
         c.setCity(req.getCity());
         c.setPhone(req.getPhone());
-        c.setEnabled(true); // ou false si tu veux validation par admin
+        c.setEnabled(true);
 
         companies.save(c);
 
@@ -89,94 +84,96 @@ public class AuthController {
                 .body(ApiResponse.success("Entreprise créée avec succès", null));
     }
 
-    // ================== LOGIN ADMIN + COMPANY ==================
-
+    // ======================================================
+    // LOGIN (ADMIN + COMPANY)
+    // ======================================================
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        String email = (request.getEmail() == null) ? "" : request.getEmail().toLowerCase();
-        String raw = (request.getPassword() == null) ? "" : request.getPassword();
+
+        String email = request.getEmail() == null ? "" : request.getEmail().toLowerCase();
+        String raw = request.getPassword() == null ? "" : request.getPassword();
 
         try {
-            // 1) Tentative ADMIN
+            // ---------- ADMIN ----------
             var adminOpt = admins.findByEmail(email);
             if (adminOpt.isPresent()) {
                 AdminUser a = adminOpt.get();
+
                 if (!a.isEnabled())
-                    return ResponseEntity.status(401).body(Map.of("error","USER_DISABLED"));
+                    return ResponseEntity.status(401).body(Map.of("error", "USER_DISABLED"));
 
                 if (!encoder.matches(raw, a.getPassword()))
-                    return ResponseEntity.status(401).body(Map.of("error","BAD_CREDENTIALS"));
+                    return ResponseEntity.status(401).body(Map.of("error", "BAD_CREDENTIALS"));
 
-                // Générer JWT avec rôle ADMIN (companyId = null)
                 String token = jwt.generateToken(null, email, "ADMIN", null);
-                var payload = new UserPayload(null, email, "ADMIN", null);
-                return ResponseEntity.ok(new LoginResponse(token, payload, false));
+                return ResponseEntity.ok(
+                        new LoginResponse(token, new UserPayload(null, email, "ADMIN", null), false)
+                );
             }
 
-            // 2) Tentative COMPANY
-            Company c = companies.findByEmail(email)
-                    .orElse(null);
-            if (c == null)
-                return ResponseEntity.status(401).body(Map.of("error","BAD_CREDENTIALS"));
+            // ---------- COMPANY ----------
+            Company c = companies.findByEmail(email).orElse(null);
+
+            if (c == null || !encoder.matches(raw, c.getPassword()))
+                return ResponseEntity.status(401).body(Map.of("error", "BAD_CREDENTIALS"));
 
             if (!c.isEnabled())
-                return ResponseEntity.status(401).body(Map.of("error","USER_DISABLED"));
+                return ResponseEntity.status(401).body(Map.of("error", "USER_DISABLED"));
 
-            if (!encoder.matches(raw, c.getPassword()))
-                return ResponseEntity.status(401).body(Map.of("error","BAD_CREDENTIALS"));
+            String token = jwt.generateToken(c.getId(), email, "COMPANY", c.getId());
 
-            // Générer JWT avec rôle COMPANY (companyId = c.getId())
-            String token = jwt.generateToken(
-                    c.getId(),   // userId ou null si tu ne l’utilises pas
-                    email,
-                    "COMPANY",
-                    c.getId()    // companyId dans les claims
+            return ResponseEntity.ok(
+                    new LoginResponse(
+                            token,
+                            new UserPayload(c.getId(), email, "COMPANY", c.getId()),
+                            false
+                    )
             );
-            var payload = new UserPayload(
-                    c.getId(),
-                    email,
-                    "COMPANY",
-                    c.getId()
-            );
-            return ResponseEntity.ok(new LoginResponse(token, payload, false));
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error","SERVER_ERROR","detail",e.getClass().getSimpleName()));
+            return ResponseEntity.status(500)
+                    .body(Map.of("error", "SERVER_ERROR"));
         }
     }
 
+    // ======================================================
+    // FORGOT PASSWORD (SEND EMAIL)
+    // ======================================================
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+
         String email = body.get("email");
+
         if (email == null || email.isBlank()) {
             return ResponseEntity
                     .badRequest()
                     .body(ApiResponse.error("Email est obligatoire"));
         }
 
-        var tokenOpt = passwordResetService.createResetTokenForEmail(email);
+        // Always return 200 (security best practice)
+        passwordResetService.createResetTokenForEmail(email);
 
-        // Si tu avais un service d'email, tu enverrais ici
-        tokenOpt.ifPresent(t -> {
-            String link = "http://localhost:3000/reset-password?token=" + t;
-            System.out.println("=== LIEN DE RÉINITIALISATION À ENVOYER PAR EMAIL ===");
-            System.out.println(link);
-            System.out.println("====================================================");
-        });
-
-        // Toujours 200, même si l'email n'existe pas
         return ResponseEntity.ok(
-                ApiResponse.success("Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.", null)
+                ApiResponse.success(
+                        "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.",
+                        null
+                )
         );
     }
 
+    // ======================================================
+    // RESET PASSWORD
+    // ======================================================
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+
         String token = body.get("token");
         String newPassword = body.get("newPassword");
 
-        if (token == null || token.isBlank() || newPassword == null || newPassword.isBlank()) {
+        if (token == null || token.isBlank()
+                || newPassword == null || newPassword.isBlank()) {
+
             return ResponseEntity
                     .badRequest()
                     .body(ApiResponse.error("Token et nouveau mot de passe sont obligatoires"));
@@ -187,25 +184,27 @@ public class AuthController {
             return ResponseEntity.ok(
                     ApiResponse.success("Mot de passe réinitialisé avec succès", null)
             );
+
         } catch (IllegalArgumentException ex) {
             return ResponseEntity
                     .badRequest()
                     .body(ApiResponse.error(ex.getMessage()));
+
         } catch (Exception ex) {
             ex.printStackTrace();
             return ResponseEntity
                     .status(500)
-                    .body(ApiResponse.error("Erreur serveur lors de la réinitialisation du mot de passe"));
+                    .body(ApiResponse.error("Erreur serveur lors de la réinitialisation"));
         }
     }
 
+    // ======================================================
+    // LOGOUT
+    // ======================================================
     @PostMapping("/logout")
     public ResponseEntity<?> logout() {
         return ResponseEntity.ok(
                 Map.of("success", true, "message", "Déconnexion réussie")
         );
     }
-
-
-
 }

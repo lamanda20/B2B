@@ -26,7 +26,6 @@ public class Company {
     private String phone;
 
 
-    // ↓↓↓ Ajouts pour l’authentification ↓↓↓
     @Column(nullable = false, length = 180)
     private String email;
 

@@ -1,11 +1,11 @@
 package com.b2b.service;
 
-import com.b2b.model.AdminUser;
 import com.b2b.model.Company;
 import com.b2b.model.PasswordResetToken;
-import com.b2b.repository.AdminUserRepository;
 import com.b2b.repository.CompanyRepository;
 import com.b2b.repository.PasswordResetTokenRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -14,106 +14,64 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class PasswordResetService {
 
-    private final AdminUserRepository admins;
     private final CompanyRepository companies;
     private final PasswordResetTokenRepository tokens;
     private final PasswordEncoder encoder;
+    private final MailService mailService;
 
-    // durée de validité du token (en minutes)
-    private static final long EXPIRATION_MINUTES = 30;
-
-    public PasswordResetService(AdminUserRepository admins,
-                                CompanyRepository companies,
-                                PasswordResetTokenRepository tokens,
-                                PasswordEncoder encoder) {
-        this.admins = admins;
-        this.companies = companies;
-        this.tokens = tokens;
-        this.encoder = encoder;
-    }
-
-    /**
-     * Crée un token de reset pour l'email s'il existe (admin ou company).
-     * Retourne le token pour logs / email.
-     */
+    // =====================================================
+    // CREATE RESET TOKEN + SEND EMAIL (TOKEN ONLY)
+    // =====================================================
     public Optional<String> createResetTokenForEmail(String email) {
-        if (email == null || email.isBlank()) {
-            return Optional.empty();
-        }
-        email = email.toLowerCase();
 
-        boolean exists = admins.findByEmail(email).isPresent()
-                || companies.existsByEmail(email);
+        email = email.toLowerCase().trim();
 
-        if (!exists) {
-            // On ne révèle pas si l'email existe ou non
+        Company company = companies.findByEmail(email).orElse(null);
+        if (company == null) {
+            // Do not reveal whether the email exists
             return Optional.empty();
         }
 
-        // Créer le token
-        String rawToken = UUID.randomUUID().toString();
+        tokens.deleteByEmail(email);
 
-        PasswordResetToken prt = new PasswordResetToken();
-        prt.setEmail(email);
-        prt.setToken(rawToken);
-        prt.setExpiresAt(LocalDateTime.now().plusMinutes(EXPIRATION_MINUTES));
-        prt.setUsed(false);
+        String token = UUID.randomUUID().toString();
 
-        tokens.save(prt);
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setToken(token);
+        resetToken.setEmail(email);
+        resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(15));
 
-        return Optional.of(rawToken);
+        tokens.save(resetToken);
+
+        mailService.sendResetPasswordEmail(email, token);
+
+        return Optional.of(token);
     }
 
-    /**
-     * Applique un reset de mot de passe à partir d'un token et d'un nouveau mot de passe.
-     */
-    public void resetPassword(String token, String newRawPassword) {
-        if (token == null || token.isBlank()) {
-            throw new IllegalArgumentException("Token invalide");
-        }
+    // =====================================================
+    // RESET PASSWORD USING TOKEN
+    // =====================================================
+    public void resetPassword(String token, String newPassword) {
 
-        PasswordResetToken prt = tokens.findByToken(token)
+        PasswordResetToken resetToken = tokens.findByToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Token invalide"));
 
-        if (prt.isUsed()) {
-            throw new IllegalArgumentException("Ce lien de réinitialisation a déjà été utilisé");
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            tokens.delete(resetToken);
+            throw new IllegalArgumentException("Token expiré");
         }
 
-        if (prt.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Ce lien de réinitialisation a expiré");
-        }
+        Company company = companies.findByEmail(resetToken.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Compte introuvable"));
 
-        String email = prt.getEmail().toLowerCase();
+        company.setPassword(encoder.encode(newPassword));
+        company.setMustChangePassword(false);
+        companies.save(company);
 
-        boolean found = false;
-
-        // Tentative Admin
-        AdminUser admin = admins.findByEmail(email).orElse(null);
-        if (admin != null) {
-            found = true;
-            if (!admin.isEnabled()) {
-                throw new IllegalArgumentException("Compte administrateur désactivé");
-            }
-            admin.setPassword(encoder.encode(newRawPassword));
-            admins.save(admin);
-        }
-
-        // Sinon Company
-        if (!found) {
-            Company company = companies.findByEmail(email).orElse(null);
-            if (company == null) {
-                throw new IllegalArgumentException("Compte introuvable");
-            }
-            if (!company.isEnabled()) {
-                throw new IllegalArgumentException("Compte entreprise désactivé");
-            }
-            company.setPassword(encoder.encode(newRawPassword));
-            companies.save(company);
-        }
-
-        prt.setUsed(true);
-        tokens.save(prt);
+        tokens.delete(resetToken);
     }
 }

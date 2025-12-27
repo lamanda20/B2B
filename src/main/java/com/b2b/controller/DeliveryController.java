@@ -20,9 +20,8 @@ public class DeliveryController {
         this.livraisonRepository = livraisonRepository;
     }
 
-    /**
-     * GET /api/deliveries/calculate-shipping?city=XXX or ?ville=XXX
-     */
+
+
     @GetMapping("/calculate-shipping")
     public ResponseEntity<Map<String, Object>> calculateShipping(@RequestParam(required = false) String city,
                                                                    @RequestParam(required = false) String ville) {
@@ -56,6 +55,7 @@ public class DeliveryController {
     /**
      * PUT /api/deliveries/{id}/transporteur - Met à jour le transporteur (texte brut)
      */
+
     @PutMapping("/{id}/transporteur")
     public ResponseEntity<Void> updateTransporteur(@PathVariable Long id, @RequestBody String transporteur) {
         Livraison livraison = livraisonRepository.findById(id)
